@@ -100,6 +100,7 @@ object TypedAstPrinter {
     case Expr.FixpointInject(exp, pred, tpe, eff, loc) => DocAst.Expression.Unknown
     case Expr.FixpointProject(pred, exp, tpe, eff, loc) => DocAst.Expression.Unknown
     case Expr.Error(_, _, _) => DocAst.Expression.Error
+    case Expr.Mutated(_,_,_,_,_) => DocAst.Expression.Unknown
   }
 
   /**

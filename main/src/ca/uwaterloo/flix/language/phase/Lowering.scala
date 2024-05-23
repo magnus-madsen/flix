@@ -797,6 +797,9 @@ object Lowering {
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
+    case TypedAst.Expr.Mutated(mutExp, _, _, _, _) =>
+      visitExp(mutExp)
+
   }
 
   /**

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
+import ca.uwaterloo.flix.MutationTester
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -172,6 +173,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Check => execBootstrap(bootstrap.check(flix))
       case Command.Doc => execBootstrap(bootstrap.doc(flix))
       case Command.Test => execBootstrap(bootstrap.test(flix))
+      case Command.Mtest(a, b, c) => MutationTester.run(flix, a, b, c)
       case Command.Outdated => execBootstrap(bootstrap.outdated(flix))
       case Command.Unknown(s) => execUnknown(s)
     }
@@ -241,22 +243,23 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private def execHelp()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
-    w.println("  Command       Arguments     Purpose")
+    w.println("  Command       Arguments                                  Purpose")
     w.println()
-    w.println("  :reload :r                  Recompiles every source file.")
-    w.println("  :info :i      <fqn>         Displays documentation for <fqn>.")
-    w.println("  :init                       Creates a new project in the current directory.")
-    w.println("  :build :b                   Builds (i.e. compiles) the current project.")
-    w.println("  :build-jar :jar             Builds a jar-file from the current project.")
-    w.println("  :build-fatjar :fatjar       Builds a fatjar-file from the current project.")
-    w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
-    w.println("  :release                    Publishes a release of the current project to GitHub.")
-    w.println("  :check :c                   Checks the current project for errors.")
-    w.println("  :doc :d                     Generates API documentation for the current project.")
-    w.println("  :test :t                    Runs the tests for the current project.")
-    w.println("  :outdated                   Shows dependencies which have newer versions available.")
-    w.println("  :quit :q                    Terminates the Flix shell.")
-    w.println("  :help :h :?                 Shows this helpful information.")
+    w.println("  :reload :r                                               Recompiles every source file.")
+    w.println("  :info :i      <fqn>                                      Displays documentation for <fqn>.")
+    w.println("  :init                                                    Creates a new project in the current directory.")
+    w.println("  :build :b                                                Builds (i.e. compiles) the current project.")
+    w.println("  :build-jar :jar                                          Builds a jar-file from the current project.")
+    w.println("  :build-fatjar :fatjar                                    Builds a fatjar-file from the current project.")
+    w.println("  :build-pkg :pkg                                          Builds a fpkg-file from the current project.")
+    w.println("  :release                                                 Publishes a release of the current project to GitHub.")
+    w.println("  :check :c                                                Checks the current project for errors.")
+    w.println("  :doc :d                                                  Generates API documentation for the current project.")
+    w.println("  :test :t                                                 Runs the tests for the current project.")
+    w.println("  :mtest :mt    <testMod> <prodMod> Opt<percentage>        Runs the mutation tests given a tester and testee.")
+    w.println("  :outdated                                                Shows dependencies which have newer versions available.")
+    w.println("  :quit :q                                                 Terminates the Flix shell.")
+    w.println("  :help :h :?                                              Shows this helpful information.")
     w.println()
   }
 

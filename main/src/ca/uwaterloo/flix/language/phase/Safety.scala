@@ -139,6 +139,8 @@ object Safety {
     def visit(exp0: Expr): List[SafetyError] = exp0 match {
       case Expr.Cst(_, _, _) => Nil
 
+      case Expr.Mutated(mutExp,_,_,_,_) => visit(mutExp)
+
       case Expr.Var(_, _, _) => Nil
 
       case Expr.Def(_, _, _) => Nil

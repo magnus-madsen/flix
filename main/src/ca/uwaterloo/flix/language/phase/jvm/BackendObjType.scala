@@ -52,6 +52,8 @@ sealed trait BackendObjType {
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
+    case BackendObjType.MutationError => JvmName(DevFlixRuntime, mkClassName("MutationError"))
+    case BackendObjType.EQMutantException => JvmName(DevFlixRuntime, mkClassName("EQMutantException"))
     case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
@@ -823,6 +825,13 @@ object BackendObjType {
       cm.mkConstructor(Constructor)
       cm.mkStaticConstructor(StaticConstructor)
 
+      cm.mkField(StepCounterField)
+      cm.mkField(InfiniteLoopException)
+      cm.mkStaticMethod(DecAndCheckMethod)
+
+      cm.mkField(EquivalentMutantException)
+      cm.mkStaticMethod(ThrowEquivalentMutantMethod)
+
       cm.mkField(CounterField)
       cm.mkStaticMethod(NewIdMethod)
 
@@ -836,9 +845,24 @@ object BackendObjType {
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(_ =>
-      NEW(JvmName.AtomicLong) ~
+        NEW(JvmName.AtomicLong) ~
         DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
         PUTSTATIC(CounterField) ~
+
+        NEW(JvmName.AtomicLong) ~
+        DUP() ~
+        cheat(mv => mv.visitLdcInsn(65_536L))~
+        invokeConstructor(JvmName.AtomicLong, MethodDescriptor.mkDescriptor(BackendType.Int64)(VoidableType.Void)) ~
+        PUTSTATIC(StepCounterField) ~
+
+        ACONST_NULL() ~
+        DUP() ~
+        PUTSTATIC(InfiniteLoopException) ~
+
+        ACONST_NULL() ~
+        DUP() ~
+        PUTSTATIC(EquivalentMutantException) ~
+
         ICONST_0() ~
         ANEWARRAY(String.jvmName) ~
         PUTSTATIC(ArgsField) ~
@@ -852,6 +876,32 @@ object BackendObjType {
             MethodDescriptor(Nil, BackendType.Int64)) ~
           LRETURN()
       ))
+
+    def ThrowEquivalentMutantMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "throwEquivalentMutant",
+      mkDescriptor()(VoidableType.Void), Some(_ =>
+            NEW(BackendObjType.EQMutantException.jvmName) ~
+            DUP() ~
+            INVOKESPECIAL(EQMutantException.Constructor) ~
+            ATHROW() ~
+          RETURN()
+      ))
+
+    def DecAndCheckMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "decAndCheck",
+      mkDescriptor()(BackendType.Int64), Some(_ =>
+          GETSTATIC(StepCounterField) ~
+          INVOKEVIRTUAL(JvmName.AtomicLong, "getAndDecrement",
+            MethodDescriptor(Nil, BackendType.Int64)) ~
+          LCONST_0() ~
+          LCMP() ~
+          ifCondition(Condition.LT) {
+            NEW(BackendObjType.MutationError.jvmName) ~
+            DUP() ~
+            INVOKESPECIAL(MutationError.Constructor) ~
+            ATHROW()
+          } ~
+          LCONST_0() ~
+          LRETURN()
+        ))
 
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
       mkDescriptor()(BackendType.Array(String.toTpe)), Some(_ =>
@@ -880,6 +930,15 @@ object BackendObjType {
 
     def CounterField: StaticField =
       StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "counter", JvmName.AtomicLong.toTpe)
+
+    def InfiniteLoopException: StaticField =
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "infiniteLoopException", JvmName.Throwable.toTpe)
+
+    def EquivalentMutantException: StaticField =
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "EquivalentMutantException", JvmName.Throwable.toTpe)
+
+    def StepCounterField: StaticField =
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "stepCounter", JvmName.AtomicLong.toTpe)
 
     def ArgsField: StaticField =
       StaticField(this.jvmName, IsPrivate, NotFinal, NotVolatile, "args", BackendType.Array(String.toTpe))
@@ -980,6 +1039,49 @@ object BackendObjType {
         thisLoad() ~
         ALOAD(1) ~
         PUTFIELD(this.LocationField) ~
+        RETURN()
+    ))
+  }
+
+  case object EQMutantException extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(EQMutantException.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+    def Constructor: ConstructorMethod = ConstructorMethod(EQMutantException.jvmName, IsPublic, Nil, Some(_ =>
+      thisLoad() ~
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("An equivalent mutant was run") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        // save argument locally
+        RETURN()
+    ))
+  }
+  case object MutationError extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(MutationError.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+    def Constructor: ConstructorMethod = ConstructorMethod(MutationError.jvmName, IsPublic, Nil, Some(_ =>
+      thisLoad() ~
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("Resource ran out, cannot determine if method will terminate") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        // save argument locally
         RETURN()
     ))
   }

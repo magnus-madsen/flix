@@ -282,6 +282,8 @@ object Regions {
     case Expr.Error(_, _, _) =>
       Nil
 
+    case Expr.Mutated(mutExp,_, _ ,_, _) => visitExp(mutExp)
+
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = method match {

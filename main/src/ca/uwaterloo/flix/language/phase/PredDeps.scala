@@ -329,6 +329,7 @@ object PredDeps {
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
 
+    case Expr.Mutated(mutExp, _, _, _, _) => visitExp(mutExp)
   }
 
   /**

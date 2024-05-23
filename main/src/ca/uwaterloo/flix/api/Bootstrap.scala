@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.MutationTester
+import ca.uwaterloo.flix.api.Bootstrap.{getAllFiles, getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -724,6 +726,26 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("Tester Error")))
         }
     }
+  }
+
+  /**
+    * Runs all tests in the flix package for the project.
+    */
+  def mtest(flix: Flix, tester: String, testee: String, percentage: Int): Validation[Unit, BootstrapError] = {
+
+      flatMapN(build(flix)) {
+          _ =>
+              MutationTester.run(flix, tester, testee, percentage)
+              Validation.success(())
+      }
+    // flatMapN(build(flix)) {
+    //   compilationResult =>
+    //     Tester.run(Nil, compilationResult)(flix) match {
+    //       case Ok(_) => Validation.success(())
+    //       case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("Tester Error")))
+    //     }
+    // }
+
   }
 
   /**

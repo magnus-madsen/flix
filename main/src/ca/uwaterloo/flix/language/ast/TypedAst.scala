@@ -78,7 +78,23 @@ object TypedAst {
     def loc: SourceLocation
   }
 
+  sealed  trait MutationType
+
+  object MutationType {
+    case class CstMut(cst: Ast.Constant) extends MutationType
+    case class SigMut(sig: Symbol.SigSym) extends MutationType
+    case class IfMut(bool: Boolean) extends MutationType
+    case class CompMut(comp: Symbol.SigSym) extends MutationType
+    case class CaseSwitch(case1: Int, case2: Int) extends MutationType
+    case class VarMut(apply: Expr.Sig, varName: Symbol.VarSym) extends MutationType
+    case class CaseDeletion(i: Int) extends MutationType
+    case class RecordSelectMut(name: Name.Label) extends MutationType
+    case class ListMut() extends MutationType
+  }
+
   object Expr {
+
+    case class Mutated(mutExp: Expr, mutationType: MutationType, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure

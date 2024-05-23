@@ -253,6 +253,8 @@ object Redundancy {
   private def visitExp(e0: Expr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.Cst(_, _, _) => Used.empty
 
+    case Expr.Mutated(mutExp,_,_,_,_) => visitExp(mutExp,env0, rc)
+
     case Expr.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
       // Case 1: Non-wild, non-recursive use of sym.
       case (false, false) => Used.of(sym)

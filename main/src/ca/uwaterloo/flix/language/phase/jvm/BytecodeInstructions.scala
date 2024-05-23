@@ -416,6 +416,16 @@ object BytecodeInstructions {
     f
   }
 
+  def LSHL(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LSHL)
+    f
+  }
+
+  def LADD(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LADD)
+    f
+  }
+
   def LLOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.LLOAD, index)
     f

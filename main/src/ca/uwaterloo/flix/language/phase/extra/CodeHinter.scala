@@ -78,6 +78,8 @@ object CodeHinter {
     * Computes code quality hints for the given expression `exp0`.
     */
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
+    case Expr.Mutated(mutExp,_,_,_,_) => visitExp(mutExp)
+
     case Expr.Var(_, _, _) => Nil
 
     case Expr.Def(sym, _, loc) =>

@@ -102,6 +102,8 @@ object Stratifier {
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
+    case Expr.Mutated(mutExp,_,_,_,_) => visitExp(mutExp)
+
     case Expr.Cst(_, _, _) => Validation.success(exp0)
 
     case Expr.Var(_, _, _) => Validation.success(exp0)
