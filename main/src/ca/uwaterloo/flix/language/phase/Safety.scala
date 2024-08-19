@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
@@ -688,50 +688,68 @@ object Safety {
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
   private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit inTryCatch: Boolean, flix: Flix): List[SafetyError] = {
-    //
-    // Compute the set of positively defined variable symbols in the constraint.
-    //
-    val posVars = positivelyDefinedVariables(c0)
-
-    // The variables that are used in a non-fixed lattice position
-    val latVars0 = nonFixedLatticeVariablesOf(c0)
-
-    // the variables that are used in a fixed position
-    val fixedLatVars0 = fixedLatticeVariablesOf(c0)
-
-    // The variables that are used in lattice position, either fixed or non-fixed.
-    val latVars = latVars0 union fixedLatVars0
-
-    // The lattice variables that are always fixed can be used in the head.
-    val safeLatVars = fixedLatVars0 -- latVars0
-
-    // The lattice variables that cannot be used relationally in the head.
-    val unsafeLatVars = latVars -- safeLatVars
+    // Questions:
+    // - what about not and fix together?
+    // - what about A(12) :- B(1; x), C(2; x) (steps in lattice is observable)
 
     //
-    // Compute the quantified variables in the constraint.
+    // Variables: variables mentioned here, are variables that are free in the outer context,
+    //            a bound variable is essentially a constant.
+    // Stable: A variable is stable if it is only used in relational or fixed-lattice position in the body
+    // Unstable: A variable is unstable if it is used in lattice position in the body
     //
+    // Rules:
+    // P1. Variables in negative body predicates must also be bound positively
+    // _. Variables in guards and functional must be bound positively, but due
+    //    to general binding checking and P1, then it is always true.
+    // P2. Stable and Unstable variables are disjoint
+    // P3. Unstable variables can only be used in the head in lattice position
+    // P4. Patterns in the body must be simple
+    // P5. expressions in constraints must be otherwise safe
+    //
+
+    //
+    // Compute the quantified variables in the constraint, i.e. the Datalog variables.
     // A lexically bound variable does not appear in this set and is never free.
     //
     val quantVars = c0.cparams.map(_.sym).toSet
 
-    //
+    // P1.
+    // Compute the set of positively defined variable symbols in the constraint.
+    val posVars = positivelyDefinedVariables(c0)
+
     // Check that all negative atoms only use positively defined variable symbols
-    // and that lattice variables are not used in relational position.
-    //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv))
+    val err1 = c0.body.flatMap(checkNegativeVariables(_, posVars, quantVars))
 
-    //
-    // Check that the free relational variables in the head atom are not lattice variables.
-    //
-    val err2 = checkHeadPredicate(c0.head, unsafeLatVars)
+    // P2. and P3.
+    val latVars = nonFixedLatticeVariablesOf(c0)
+    val fixedLatVars = fixedLatticeVariablesOf(c0)
+    val relVars = relationalVariablesOf(c0)
 
-    //
+    val stable = relVars ++ fixedLatVars
+    val unstable = latVars
+    val err2 = stable.intersect(unstable).map(sym => IllegalRelationalUseOfLatticeVar(sym, sym.loc))
+    val err3 = checkHeadPredicate(c0.head, unstable)
+
     // Check that patterns in atom body are legal
-    //
-    val err3 = c0.body.flatMap(s => checkBodyPattern(s))
+    val err4 = c0.body.flatMap(s => checkBodyPattern(s))
 
-    err1 ++ err2 ++ err3
+    val err5 = checkConstraintExps(c0, renv: RigidityEnv)
+
+    err1 ++ err2 ++ err3 ++ err4 ++ err5
+  }
+
+  private def checkConstraintExps(c0: Constraint, renv: RigidityEnv)(implicit inTryCatch: Boolean, flix: Flix): List[SafetyError] = {
+    val Constraint(_, head, body, _) = c0
+    val err1 = head match {
+      case Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp(_, renv))
+    }
+    val err2 = body.flatMap {
+      case Body.Atom(_, _, _, _, _, _, _) => Nil
+      case Body.Functional(_, exp, _) => visitExp(exp, renv)
+      case Body.Guard(exp, _) => visitExp(exp, renv)
+    }
+    err1 ++ err2
   }
 
   /**
@@ -748,7 +766,31 @@ object Safety {
     case _ => Nil
   }
 
-  /**
+  private def checkNegativeVariables(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[SafetyError] = p0 match {
+    case Body.Atom(_, _, polarity, _, terms, _, loc) =>
+      // P1
+      // Error on negative variables not in posVars.
+      polarity match {
+        case Polarity.Positive => Nil
+        case Polarity.Negative =>
+          // Compute the free variables in the terms which are *not* bound by the lexical scope.
+          val freeVars = terms.flatMap(freeVarsOf).toSet intersect quantVars
+          // Check if any free variables are not positively bound.
+          val variableNegErrors = ((freeVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+          // Also check _ variables, which are not included in the above check
+          val wildcardNegErrors = visitPats(terms, loc)
+          wildcardNegErrors ++ variableNegErrors
+      }
+    case Body.Functional(_, exp, loc) =>
+      // TODO what does this do?
+      // check for non-positively in variables (free variables in exp).
+      val inVars = freeVars(exp).keySet intersect quantVars
+      ((inVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+    case Body.Guard(_, _) =>
+      Nil
+  }
+
+    /**
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
@@ -844,6 +886,26 @@ object Safety {
   }
 
   /**
+    * Computes the free variables that occur in relational position in
+    * atoms.
+    */
+  private def relationalVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
+    c0.body.flatMap(relationalVariablesOf).toSet
+
+  /**
+    * Computes the lattice variables of `p0` if it is a fixed atom.
+    */
+  private def relationalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
+    case Body.Atom(_, Denotation.Relational, _, _, terms, _, _) =>
+      terms.flatMap(freeVarsOf).toSet
+
+    case Body.Atom(_, Denotation.Latticenal, _, _, terms, _, _) =>
+      terms.dropRight(1).flatMap(freeVarsOf).toSet
+
+    case _ => Set.empty
+  }
+
+  /**
     * Computes the free variables that occur in a lattice position in
     * atoms that are not marked with fix.
     */
@@ -863,27 +925,27 @@ object Safety {
   /**
     * Checks for `IllegalRelationalUseOfLatticeVariable` in the given `head` predicate.
     */
-  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[SafetyError] = head match {
+  private def checkHeadPredicate(head: Predicate.Head, unstableVars: Set[Symbol.VarSym]): List[SafetyError] = head match {
     case Predicate.Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
       // Check the relational terms ("the keys").
-      checkTerms(terms.dropRight(1), latVars, loc)
+      checkTerms(terms.dropRight(1), unstableVars, loc)
     case Predicate.Head.Atom(_, Denotation.Relational, terms, _, loc) =>
       // Check every term.
-      checkTerms(terms, latVars, loc)
+      checkTerms(terms, unstableVars, loc)
   }
 
   /**
     * Checks that the free variables of the terms does not contain any of the variables in `latVars`.
     * If they do contain a lattice variable then a `IllegalRelationalUseOfLatticeVariable` is created.
     */
-  private def checkTerms(terms: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[SafetyError] = {
+  private def checkTerms(terms: List[Expr], unstableVars: Set[Symbol.VarSym], loc: SourceLocation): List[SafetyError] = {
     // Compute the free variables in all terms.
     val allVars = terms.foldLeft(Set.empty[Symbol.VarSym])({
       case (acc, term) => acc ++ freeVars(term).keys
     })
 
     // Compute the lattice variables that are illegally used in the terms.
-    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVar(sym, loc))
+    allVars.intersect(unstableVars).toList.map(sym => IllegalRelationalUseOfLatticeVar(sym, loc))
   }
 
   /**

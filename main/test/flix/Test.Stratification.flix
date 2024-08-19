@@ -638,16 +638,5 @@ mod Test.Stratification {
             (query p1 select x from A999(x) |> Vector.length) +
             (query p2 select x from B999(x) |> Vector.length)
             > 0
-
-        @test
-        def test10MixedFix00(): Bool =
-            let p = #{
-                C1000("a"; 12).
-                B1000(12; -14). C1000("a"; -14).
-                A1000(15; x) :- fix B1000(12; x), C1000("a"; x).
-                B1000(12; 12). C1000("a"; 24).
-            };
-            let arr = query p select x from A1000(15; x);
-            Vector.length(arr) == 1
     }
 }
