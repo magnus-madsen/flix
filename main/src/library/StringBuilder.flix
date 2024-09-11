@@ -19,7 +19,7 @@ import java.lang.{StringBuilder => JStringBuilder}
 ///
 /// Represents a StringBuilder.
 ///
-enum StringBuilder[_: Region](JStringBuilder)
+struct StringBuilder[r] {builder: JStringBuilder}
 
 mod StringBuilder {
     import java.lang.{StringBuilder => JStringBuilder};
@@ -27,8 +27,8 @@ mod StringBuilder {
     ///
     /// Returns a new mutable StringBuilder.
     ///
-    pub def empty(_: Region[r]): StringBuilder[r] \ r =
-        StringBuilder(checked_ecast(unsafe new JStringBuilder()))
+    pub def empty(rc: Region[r]): StringBuilder[r] \ r =
+        new StringBuilder @ rc {builder = checked_ecast(unsafe new JStringBuilder())}
 
     ///
     /// Append `x` to the StringBuilder `sb`.
@@ -42,16 +42,14 @@ mod StringBuilder {
     /// Append the String `s` to the StringBuilder `sb`.
     ///
     pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ r =
-        let StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.append(s)) as _ \ r);
+        unchecked_cast((unsafe sb->builder.append(s)) as _ \ r);
         ()
 
     ///
     /// Append the code point `cp` to the StringBuilder `sb`.
     ///
     pub def appendCodePoint!(cp: Int32, sb: StringBuilder[r]): Unit \ r =
-        let StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.appendCodePoint(cp)) as _ \ r);
+        unchecked_cast((unsafe sb->builder.appendCodePoint(cp)) as _ \ r);
         ()
 
     ///
@@ -109,8 +107,7 @@ mod StringBuilder {
     /// Returns an iterator over `sb`.
     ///
     pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
-        let StringBuilder(msb) = sb;
-        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unchecked_cast((unsafe msb.charAt(i)) as _ \ r2))
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unchecked_cast((unsafe sb->builder.charAt(i)) as _ \ r2))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
@@ -122,8 +119,7 @@ mod StringBuilder {
     /// Return the number of characters in the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =
-        let StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.length()) as _ \ r)
+        unchecked_cast((unsafe sb->builder.length()) as _ \ r)
 
     ///
     /// Return the number of characters in the StringBuilder `sb`.
@@ -134,14 +130,12 @@ mod StringBuilder {
     /// Sets the length of the StringBuilder `sb`.
     ///
     pub def setLength!(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
-        let StringBuilder.StringBuilder(msb) = sb;
-        unchecked_cast((unsafe msb.setLength(newLength)) as _ \ r)
+        unchecked_cast((unsafe sb->builder.setLength(newLength)) as _ \ r)
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =
-        let StringBuilder(msb) = sb;
-        unchecked_cast(unsafe msb.toString() as _ \ r)
+        unchecked_cast(unsafe sb->builder.toString() as _ \ r)
 
 }

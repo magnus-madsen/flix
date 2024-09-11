@@ -771,7 +771,7 @@ object Ast {
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 
-      case class StructAccess(e: ResolutionError.UndefinedStructField) extends Expr
+      case class StructAccess(e: TypeError.UndefinedStructField) extends Expr
 
       case object OtherExpr extends Expr
     }

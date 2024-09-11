@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.Ast.TypeSource.Ascribed
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
@@ -46,12 +47,19 @@ object Deriver {
 
   val DerivableSyms = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
 
+  val Param1Name = "a"
+  val Param2Name = "b"
+  val GetMethodName = "get"
+  val PutMethodName = "put"
+
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
+    val structFieldInstances = root.structs.values.map(getInstancesOfStruct(_, root))
+    val fieldNames = root.structs.values.flatMap(struct => struct.fields).map(field => Name.Label(field.sym.name, field.sym.loc)).toSet
 
     mapN(derivedInstances) {
       instances =>
-        val newInstances = instances.flatten.foldLeft(root.instances) {
+        val newInstances = (instances ++ structFieldInstances).flatten.foldLeft(root.instances) {
           case (acc, inst) =>
             val accInsts = acc.getOrElse(inst.trt.sym, Nil)
             acc + (inst.trt.sym -> (inst :: accInsts))
@@ -59,6 +67,180 @@ object Deriver {
         root.copy(instances = newInstances)
     }
   }(DebugValidation())
+
+  /**
+    * Build the name of the get trait for this struct field
+    */
+  def structFieldGetTraitName(fieldName: String): String = "DotGet_" + fieldName
+
+  /**
+    * Build the name of the put trait for this struct field
+    */
+  def structFieldPutTraitName(fieldName: String): String = "DotPut_" + fieldName
+
+  /**
+    * Builds the instances for this struct
+    */
+  private def getInstancesOfStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = {
+    val getInstances = struct0.fields.map(fieldGetInstance(struct0, _, root))
+    val putInstances = struct0.fields.filter(_.mod.isMutable).map(fieldPutInstance(struct0, _, root))
+    getInstances ++ putInstances
+  }
+
+  /**
+    * Builds the instances for the `get` operation of this struct field
+    */
+  private def fieldGetInstance(struct0: KindedAst.Struct, field: KindedAst.StructField, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = {
+    val loc = field.loc
+    val (fields, structType, eff) = Kinder.instantiateStruct(struct0.sym, root.structs)
+    val fieldType = fields(field.sym)
+    val traitSym = Symbol.mkTraitSym(structFieldGetTraitName(field.sym.name))
+    val assocTypeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
+    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
+    val assocTypeSymUse = Ast.AssocTypeSymUse(assocTypeSym, loc)
+    val assocEffSymUse = Ast.AssocTypeSymUse(assocEffSym, loc)
+    val assocTpe = fieldAssocTypeDef(assocTypeSymUse, structType, fieldType, loc)
+    val assocEff = fieldAssocTypeDef(assocEffSymUse, structType, eff, loc)
+    val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
+    val getSpec = fieldGetSpec(structType, eff, fieldType, Nil, param1Symbol, loc)
+    val getExpr = fieldGetImpl(param1Symbol, field, loc)
+    val getDef = KindedAst.Def(fieldDefnSymbol(structFieldGetTraitName(field.sym.name), GetMethodName), getSpec, getExpr)
+    KindedAst.Instance(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      trt = Ast.TraitSymUse(traitSym, loc),
+      tpe = structType,
+      tconstrs = List(),
+      assocs = List(assocTpe, assocEff),
+      defs = List(getDef),
+      ns = Name.RootNS,
+      loc = loc)
+  }
+
+  /**
+    * Builds the instance for this `put` operation of this struct field
+    */
+  private def fieldPutInstance(struct0: KindedAst.Struct, field: KindedAst.StructField, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = {
+    val loc = field.loc
+    val (fields, structType, eff) = Kinder.instantiateStruct(struct0.sym, root.structs)
+    val fieldType = fields(field.sym)
+    val traitSym = Symbol.mkTraitSym(structFieldPutTraitName(field.sym.name))
+    val assocTypeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
+    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
+    val assocTypeSymUse = Ast.AssocTypeSymUse(assocTypeSym, loc)
+    val assocEffSymUse = Ast.AssocTypeSymUse(assocEffSym, loc)
+    val assocTpe = fieldAssocTypeDef(assocTypeSymUse, structType, fieldType, loc)
+    val assocEff = fieldAssocTypeDef(assocEffSymUse, structType, eff, loc)
+    val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
+    val param2Symbol = Symbol.freshVarSym(Param2Name, BoundBy.FormalParam, loc)
+    val putSpec = fieldPutSpec(structType, eff, fieldType, Nil, param1Symbol, param2Symbol, loc)
+    val putExpr = fieldPutImpl(param1Symbol, param2Symbol, field, loc)
+    val putDef = KindedAst.Def(fieldDefnSymbol(structFieldPutTraitName(field.sym.name), PutMethodName), putSpec, putExpr)
+    KindedAst.Instance(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      trt = Ast.TraitSymUse(traitSym, loc),
+      tpe = structType,
+      tconstrs = List(),
+      assocs = List(assocTpe, assocEff),
+      defs = List(putDef),
+      ns = Name.RootNS,
+      loc = loc)
+  }
+
+  /**
+    * Builds the definition for the associated type
+    */
+  private def fieldAssocTypeDef(sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation): KindedAst.AssocTypeDef =
+    KindedAst.AssocTypeDef(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = sym,
+      arg = arg,
+      tpe = tpe,
+      loc = loc
+    )
+
+  /**
+    * Builds the definition symbol for the struct instance method
+    */
+  def fieldDefnSymbol(traitName: String, methodName: String)(implicit flix: Flix): Symbol.DefnSym =
+    Symbol.mkDefnSym(traitName + "." + methodName, Some(flix.genSym.freshId()))
+
+  /**
+    * Builds the body for the `put` operation
+    */
+  private def fieldPutImpl(param1Symbol: Symbol.VarSym, param2Symbol: Symbol.VarSym, field: KindedAst.StructField, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr.StructPut =
+    KindedAst.Expr.StructPut(
+      exp1 = KindedAst.Expr.Var(param1Symbol, loc),
+      sym = field.sym,
+      exp2 = KindedAst.Expr.Var(param2Symbol, loc),
+      tvar = Type.freshVar(Kind.Star, loc),
+      evar = Type.freshVar(Kind.Eff, loc),
+      loc = loc
+    )
+
+  /**
+    * Builds the body for the `get` operation
+    */
+  private def fieldGetImpl(param1Symbol: Symbol.VarSym, field: KindedAst.StructField, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr.StructGet =
+    KindedAst.Expr.StructGet(
+      exp = KindedAst.Expr.Var(param1Symbol, loc),
+      sym = field.sym,
+      tvar = Type.freshVar(Kind.Star, loc),
+      evar = Type.freshVar(Kind.Eff, loc),
+      loc = loc
+    )
+
+  /**
+    * Builds the spec for this struct field's `get` operation
+    */
+  private def fieldGetSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], param1Symbol: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
+    KindedAst.Spec(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      tparams = tparams,
+      fparams = List(KindedAst.FormalParam(param1Symbol, Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc)),
+      sc = Scheme(
+        tparams.map(_.sym),
+        Nil,
+        Nil,
+        Type.mkUncurriedArrowWithEffect(List(structType), structEff, fieldType, loc)
+      ),
+      tpe = fieldType,
+      eff = structEff,
+      tconstrs = List(),
+      econstrs = List(),
+      loc = loc
+    )
+
+  /**
+    * Builds the spec for this struct field's `put` operation
+    */
+  private def fieldPutSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], param1Symbol: Symbol.VarSym, param2Symbol: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
+    KindedAst.Spec(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      tparams = tparams,
+      fparams = List(
+        KindedAst.FormalParam(param1Symbol, Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(param2Symbol, Ast.Modifiers.Empty, fieldType, Ast.TypeSource.Ascribed, loc)),
+      sc = Scheme(
+        tparams.map(_.sym),
+        Nil,
+        Nil,
+        Type.mkUncurriedArrowWithEffect(List(structType, fieldType), structEff, Type.Unit, loc)
+      ),
+      tpe = Type.Unit,
+      eff = structEff,
+      tconstrs = List(),
+      econstrs = List(),
+      loc = loc
+    )
 
   /**
     * Builds the instances derived from this enum.

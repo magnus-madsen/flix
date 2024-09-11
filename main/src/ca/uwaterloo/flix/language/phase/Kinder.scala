@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.Validation.{flatMapN, fold, mapN, traverse, traverseOpt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -223,11 +224,11 @@ object Kinder {
     * Performs kinding on the given struct field under the given kind environment.
     */
   private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
-    case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
+    case ResolvedAst.Declaration.StructField(mod, sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       mapN(tpeVal) {
         case tpe =>
-          KindedAst.StructField(sym, tpe, loc)
+          KindedAst.StructField(mod, sym, tpe, loc)
       }
   }
 
@@ -681,17 +682,25 @@ object Kinder {
         case exp =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructGet(exp, field, tvar, evar, loc)
+          KindedAst.Expr.Apply(
+            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym(Deriver.structFieldGetTraitName(field.name)),
+              Name.Ident(Deriver.GetMethodName, loc)), Type.freshVar(Kind.Star, loc), loc),
+            List(exp), tvar, evar, loc
+          )
       }
 
-    case ResolvedAst.Expr.StructPut(e1, sym, e2, loc) =>
+    case ResolvedAst.Expr.StructPut(e1, field, e2, loc) =>
       val exp1Val = visitExp(e1, kenv0, taenv, henv0, root)
       val exp2Val = visitExp(e2, kenv0, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructPut(exp1, sym, exp2, tvar, evar, loc)
+          KindedAst.Expr.Apply(
+            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym(Deriver.structFieldPutTraitName(field.name)),
+              Name.Ident(Deriver.PutMethodName, loc)), Type.freshVar(Kind.Star, loc), loc),
+            List(exp1, exp2), tvar, evar, loc
+          )
       }
 
     case ResolvedAst.Expr.VectorLit(exps, loc) =>
@@ -1965,4 +1974,25 @@ object Kinder {
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[KindError])
 
+
+  /**
+    * Instantiates the scheme of the struct in corresponding to `sym` in `structs`
+    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
+    *
+    * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
+    *   The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
+    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
+    *   The third element of the return tuple would be `r'`
+    */
+  def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit scope: Scope, flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+    val struct = structs(sym)
+    val fields = struct.fields
+    val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
+    val subst = Substitution(substMap)
+    val instantiatedFields = fields.map(f => f match {
+      case KindedAst.StructField(_, fieldSym, tpe, _) =>
+        fieldSym -> subst(tpe)
+    })
+    (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
+  }
 }

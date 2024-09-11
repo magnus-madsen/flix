@@ -1,11 +1,11 @@
-struct Get[r] {
-    fstName: String,
-    lstName: String,
-    age: Int32,
-    cowboy: Bool
-}
-mod Get {
+mod Test.Exp.Struct.Get {
 
+    struct Get[r] {
+        fstName: String,
+        lstName: String,
+        age: Int32,
+        cowboy: Bool
+    }
 
     @test
     def testStructGet01(): Bool =
@@ -78,15 +78,13 @@ mod Get {
             let fstName2 = s->fstName;
             fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
         }
-}
 
-struct BinaryTree[t, r] {
-    left: Option[BinaryTree[t, r]],
-    right: Option[BinaryTree[t, r]],
-    value: t
-}
+    struct BinaryTree[t, r] {
+        left: Option[BinaryTree[t, r]],
+        right: Option[BinaryTree[t, r]],
+        value: t
+    }
 
-mod BinaryTree {
     def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
         match tree {
             case None => 0
@@ -113,18 +111,16 @@ mod BinaryTree {
             };
             binaryTreeSum(Some(tree)) == 25
         }
-}
 
-struct Nested[v, r] {
-    v: v
-}
-mod Nested {
+    struct Nested[v, r] {
+        value: v
+    }
 
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15}}}};
-            nested->v->v->v->v == 15
+            let nested = new Nested @ rc { value = new Nested @ rc { value = new Nested @ rc {value = new Nested @ rc {value = 15} }} };
+            nested->value->value->value->value == 15
         }
 
 }

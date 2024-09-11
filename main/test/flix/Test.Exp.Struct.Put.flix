@@ -1,10 +1,11 @@
-struct Person[r] {
-    mut fstName: String,
-    mut lstName: String,
-    mut age: Int32,
-    mut cowboy: Bool
-}
-mod Person {
+mod Test.Exp.Struct.Put {
+
+    struct Person[r] {
+        mut fstName: String,
+        mut lstName: String,
+        mut age: Int32,
+        mut cowboy: Bool
+    }
 
     @test
     def testStructPut01(): Bool =
@@ -82,27 +83,23 @@ mod Person {
             s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42 and s->cowboy == true
         }
 
-}
-
-struct BinaryTree[t, r] {
-    mut left: Option[BinaryTree[t, r]],
-    mut right: Option[BinaryTree[t, r]],
-    mut node_value: t
-}
-
-mod BinaryTree {
+    struct BinaryTree[t, r] {
+        mut left: Option[BinaryTree[t, r]],
+        mut right: Option[BinaryTree[t, r]],
+        mut value: t
+    }
 
     def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
         match tree {
             case None => 0
-            case Some(t) => t->node_value + binaryTreeSum(t->left) + binaryTreeSum(t->right)
+            case Some(t) => t->value + binaryTreeSum(t->left) + binaryTreeSum(t->right)
         }
 
     def doubleTree(tree: Option[BinaryTree[Int32, r]]): Unit \ {r, IO} =
         match tree {
             case None => ()
             case Some(t) =>
-                t->node_value = t->node_value + t->node_value;
+                t->value = t->value + t->value;
                 doubleTree(t->left);
                 doubleTree(t->right)
         }
@@ -113,81 +110,78 @@ mod BinaryTree {
             let leaf1 = new BinaryTree @ rc {
                 left = None,
                 right = None,
-                node_value = 10
+                value = 10
             };
             let leaf2 = new BinaryTree @ rc {
                 left = None,
                 right = None,
-                node_value = 9
+                value = 9
             };
             let leaf3 = new BinaryTree @ rc {
                 left = None,
                 right = None,
-                node_value = 8
+                value = 8
             };
             let leaf4 = new BinaryTree @ rc {
                 left = None,
                 right = None,
-                node_value = 7
+                value = 7
             };
             let innernode1 = new BinaryTree @ rc {
                 left = Some(leaf1),
                 right = Some(leaf2),
-                node_value = 4
+                value = 4
             };
             let innernode2 = new BinaryTree @ rc {
                 left = Some(leaf3),
                 right = Some(leaf4),
-                node_value = 4
+                value = 4
             };
             let tree = new BinaryTree @ rc {
                 left = Some(innernode1),
                 right = Some(innernode2),
-                node_value = 5
+                value = 5
             };
             doubleTree(Some(tree));
             binaryTreeSum(Some(tree)) == 94
         }
 
-}
-struct Nested[t, r] {
-    mut v : t
-}
+    struct Nested[t, r] {
+        mut value : t
+    }
 
-mod Nested {
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15} }} };
-            nested->v->v->v->v == 15;
-            nested->v->v->v->v = 37;
-            nested->v->v->v->v == 37
+            let nested = new Nested @ rc { value = new Nested @ rc  { value = new Nested @ rc  {value = new Nested @ rc  {value = 15}}}};
+            nested->value->value->value->value == 15;
+            nested->value->value->value->value = 37;
+            nested->value->value->value->value == 37
         }
-}
 
-struct Lst[t, r] {
-    mut value: t,
-    mut next: Option[Lst[t, r]]
-}
-mod Lst {
-    def listAppend(list: Lst[t, r], rc: Region[r], value: t): Unit \ r = match list->next {
-        case Some(l) => listAppend(l, rc, value)
-        case None => list->next = Some(new Lst @ rc {value = value, next = None})
+    struct List[t, r] {
+        mut value: t,
+        mut next: Option[List[t, r]]
     }
 
-    def listSum(list: Lst[Int32, r]): Int32 \ r =
+    def listAppend(list: List[t, r], rc: Region[r], value: t): Unit \ r = match list->next {
+        case Some(l) => listAppend(l, rc, value)
+        case None => list->next = Some(new List @ rc {value = value, next = None})
+    }
+
+    def listSum(list: List[Int32, r]): Int32 \ r =
         list->value + match list->next {
             case Some(l) => listSum(l)
             case None => 0
         }
 
-    def listDifference(list: Lst[Int32, r]): Int32 \ r =
+    def listDifference(list: List[Int32, r]): Int32 \ r =
         list->value - match list->next {
             case Some(l) => listSum(l)
             case None => 0
         }
 
-    def listReverse(list: Lst[Int32, r], rc: Region[r]): Lst[Int32, r] \ r =
+    def listReverse(list: List[Int32, r], rc: Region[r]): List[Int32, r] \ r =
         match list->next {
             case None => list
             case Some(l) =>
@@ -197,9 +191,9 @@ mod Lst {
         }
 
     @test
-    def testLst01(): Bool =
+    def testList01(): Bool =
         region rc {
-            let list = new Lst @ rc { value = 1, next = None };
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -213,9 +207,9 @@ mod Lst {
         }
 
     @test
-    def testLst02(): Bool =
+    def testList02(): Bool =
         region rc {
-            let list = new Lst @ rc { value = 1, next = None };
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -229,9 +223,9 @@ mod Lst {
         }
 
     @test
-    def testLst03(): Bool =
+    def testList03(): Bool =
         region rc {
-            let list = new Lst @ rc { value = 1, next = None };
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -245,9 +239,9 @@ mod Lst {
         }
 
     @test
-    def testLst04(): Bool =
+    def testList04(): Bool =
         region rc {
-            let list = new Lst @ rc { value = 1, next = None };
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);

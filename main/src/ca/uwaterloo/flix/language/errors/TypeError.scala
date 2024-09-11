@@ -887,4 +887,22 @@ object TypeError {
     }
   }
 
+  /**
+   * An error raised to indicate an undefined field in a `struct.field` or `struct.field = value` expression.
+   *
+   * @param field the name of the missing field.
+   * @param loc   the location where the error occurred.
+   */
+  case class UndefinedStructField(tpe: Type, renv: RigidityEnv, field: Name.Label, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
+    override def summary: String = s"Undefined field '$field' for type `${formatType(tpe, Some(renv))}`"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined field '$field' for type `${formatType(tpe, Some(renv))}`
+         |
+         |${code(loc, "undefined field")}
+         |""".stripMargin
+    }
+  }
+
 }

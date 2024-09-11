@@ -1318,7 +1318,7 @@ mod Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(rc1, 0, c, a);
-        MutList.MutList(rc1, Ref.fresh(rc1, copy), Ref.fresh(rc1, len))
+        new MutList @ rc1{rc = rc1, a = copy, l = len }
 
     ///
     /// Alias for `findIndexOfLeft`.

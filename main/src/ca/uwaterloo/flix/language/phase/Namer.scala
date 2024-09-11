@@ -48,8 +48,20 @@ object Namer {
       }
 
       val units = ParOps.parMapValues(program.units)(visitUnit)
-      val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
+      val table0@SymbolTable(s, _, _) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
+      val structFields0 = collectStructFields(s.values.flatMap(_.m.flatMap(_._2)))
+      val structFields = sctx.usedFields.iterator().asScala.foldLeft(structFields0) {
+        case (acc, cur) => acc + cur
+      }
+      val structFieldTraits = fieldTraits(structFields)(Scope.Top, flix)
 
+      val table = structFieldTraits.foldLeft(table0) {
+        case(acc, cur) =>
+          val table1 = tryAddToTable(acc, Name.RootNS.parts, cur.sym.name, cur)
+          val assocsAndSigs = cur.assocs ++ cur.sigs
+          assocsAndSigs.foldLeft(table1)(tableDecl)
+      }
+      val SymbolTable(symbols0, instances0, uses0) = table
       // TODO NS-REFACTOR remove use of NName
       val symbols = symbols0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v.m
@@ -60,7 +72,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, structFieldTraits, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
     }(DebugValidation())
 
   /**
@@ -134,12 +146,7 @@ object Namer {
       cases.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
-      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      fields.foldLeft(table1)(tableDecl)
-
-    case NamedAst.Declaration.StructField(_, sym, tpe, loc) =>
-      // Add a `€` to the beginning of the name to prevent collisions with other kinds of names
-      tryAddToTable(table0, sym.namespace, "€" + sym.name, decl)
+      tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -167,6 +174,8 @@ object Namer {
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) =>
       throw InternalCompilerException("unexpected tabling of associated type definition", loc)
 
+    case NamedAst.Declaration.StructField(_, sym, tpe, loc) =>
+      throw InternalCompilerException("unexpected tabling of struct field", loc)
   }
 
   /**
@@ -231,6 +240,15 @@ object Namer {
       sctx.errors.add(NameError.DuplicateLowerName(name, loc1, loc2))
       sctx.errors.add(NameError.DuplicateLowerName(name, loc2, loc1))
     }
+  }
+
+  private def collectStructFields(decls: Iterable[NamedAst.Declaration]): Set[Name.Label] = {
+    val structs = decls.collect { decl =>
+      decl match {
+        case s: NamedAst.Declaration.Struct => s
+      }
+    }
+    structs.flatMap(struct => struct.fields.map(field => Name.Label(field.sym.name, field.sym.loc))).toSet
   }
 
   /**
@@ -710,10 +728,12 @@ object Namer {
       NamedAst.Expr.StructNew(qname, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
+      sctx.usedFields.add(name)
       val e = visitExp(exp, ns0)
       NamedAst.Expr.StructGet(e, name, loc)
 
     case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
+      sctx.usedFields.add(name)
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       NamedAst.Expr.StructPut(e1, name, e2, loc)
@@ -1516,7 +1536,7 @@ object Namer {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
 
   /**
@@ -1524,6 +1544,126 @@ object Namer {
     *
     * @param errors the [[NameError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], usedFields: ConcurrentLinkedQueue[Name.Label])
 
+
+  /**
+    * Builds the traits for this struct
+    */
+  private def fieldTraits(fieldNames: Set[Name.Label])(implicit scope: Scope, flix: Flix): List[NamedAst.Declaration.Trait] =
+    fieldNames.toList.flatMap(field => List(fieldGetTrait(field.name, field.loc), fieldPutTrait(field.name, field.loc)))
+
+  /**
+    * Builds the `get` trait for this struct field
+    */
+  private def fieldGetTrait(name: String, loc: SourceLocation)(implicit scope: Scope, flix: Flix): NamedAst.Declaration.Trait = {
+    val star = NamedAst.Kind.Ambiguous(Name.mkQName("Type", loc), loc)
+    val eff = NamedAst.Kind.Ambiguous(Name.mkQName("Eff", loc), loc)
+    val param1Symbol = Symbol.freshVarSym(Deriver.Param1Name, BoundBy.FormalParam, loc)
+    val tparamSym = Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc)
+    val tparam = NamedAst.TypeParam.Kinded(Name.Ident("a", loc), tparamSym, star, loc)
+    val structType = NamedAst.Type.Var(tparam.name, loc)
+    val traitSym = Symbol.mkTraitSym(Deriver.structFieldGetTraitName(name))
+    val assocTpeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
+    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
+    val assocTpe = NamedAst.Type.Apply(NamedAst.Type.Ambiguous(Name.mkQName(Deriver.structFieldGetTraitName(name) + ".FieldType", loc), loc), structType, loc)
+    val assocEff = NamedAst.Type.Apply(NamedAst.Type.Ambiguous(Name.mkQName(Deriver.structFieldGetTraitName(name) + ".Aef", loc), loc), structType, loc)
+    val assocTpeSig = structAssocTypeSig(tparam, star, assocTpeSym, loc)
+    val assocEffSig = structAssocTypeSig(tparam, eff, assocEffSym, loc)
+    val sigSym = Symbol.mkSigSym(traitSym, Name.Ident(Deriver.GetMethodName, loc))
+    val spec = getSpec(param1Symbol, structType, assocTpe, assocEff, loc)
+    val getSig = NamedAst.Declaration.Sig(sigSym, spec, None)
+    val sigs = List(getSig)
+    NamedAst.Declaration.Trait(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      sym = traitSym,
+      tparam = tparam,
+      superTraits = Nil,
+      assocs = List(assocTpeSig, assocEffSig),
+      sigs = sigs,
+      laws = Nil,
+      loc = loc
+    )
+  }
+
+  /**
+    * Builds the `put` trait for this struct field
+    */
+  private def fieldPutTrait(name: String, loc: SourceLocation)(implicit scope: Scope, flix: Flix): NamedAst.Declaration.Trait = {
+    val star = NamedAst.Kind.Ambiguous(Name.mkQName("Type", loc), loc)
+    val eff = NamedAst.Kind.Ambiguous(Name.mkQName("Eff", loc), loc)
+    val param1Symbol = Symbol.freshVarSym(Deriver.Param1Name, BoundBy.FormalParam, loc)
+    val param2Symbol = Symbol.freshVarSym(Deriver.Param2Name, BoundBy.FormalParam, loc)
+    val tparamSym = Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc)
+    val tparam = NamedAst.TypeParam.Kinded(Name.Ident("a", loc), tparamSym, star, loc)
+    val structType = NamedAst.Type.Var(tparam.name, loc)
+    val traitSym = Symbol.mkTraitSym(Deriver.structFieldPutTraitName(name))
+    val assocTpeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
+    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
+    val assocTpe = NamedAst.Type.Apply(NamedAst.Type.Ambiguous(Name.mkQName(Deriver.structFieldPutTraitName(name) + ".FieldType", loc), loc), structType, loc)
+    val assocEff = NamedAst.Type.Apply(NamedAst.Type.Ambiguous(Name.mkQName(Deriver.structFieldPutTraitName(name) + ".Aef", loc), loc), structType, loc)
+    val assocTpeSig = structAssocTypeSig(tparam, star, assocTpeSym, loc)
+    val assocEffSig = structAssocTypeSig(tparam, eff, assocEffSym, loc)
+    val sigSym = Symbol.mkSigSym(traitSym, Name.Ident(Deriver.PutMethodName, loc))
+    val spec = putSpec(param1Symbol, param2Symbol, structType, assocTpe, assocEff, loc)
+    val putSig = NamedAst.Declaration.Sig(sigSym, spec, None)
+    val sigs = List(putSig)
+    NamedAst.Declaration.Trait(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      sym = traitSym,
+      tparam = tparam,
+      superTraits = Nil,
+      assocs = List(assocTpeSig, assocEffSig),
+      sigs = sigs,
+      laws = Nil,
+      loc = loc
+    )
+  }
+
+  def getSpec(param1Sym: Symbol.VarSym, structType: NamedAst.Type, fieldType: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation): NamedAst.Spec = NamedAst.Spec(
+    doc = Ast.Doc(Nil, loc),
+    ann = Ast.Annotations.Empty,
+    mod = Ast.Modifiers.Empty,
+    tparams = List(),
+    fparams = List(NamedAst.FormalParam(param1Sym, Ast.Modifiers.Empty, Some(structType), loc)),
+    retTpe = fieldType,
+    eff = Some(eff),
+    tconstrs = List(),
+    econstrs = List(),
+    loc = loc
+  )
+
+  def putSpec(param1Sym: Symbol.VarSym, param2Sym: Symbol.VarSym, structType: NamedAst.Type, fieldType: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation): NamedAst.Spec = NamedAst.Spec(
+    doc = Ast.Doc(Nil, loc),
+    ann = Ast.Annotations.Empty,
+    mod = Ast.Modifiers.Empty,
+    tparams = List(),
+    fparams = List(
+      NamedAst.FormalParam(param1Sym, Ast.Modifiers.Empty, Some(structType), loc),
+      NamedAst.FormalParam(param2Sym, Ast.Modifiers.Empty, Some(fieldType), loc),
+    ),
+    retTpe = NamedAst.Type.Unit(loc),
+    eff = Some(eff),
+    tconstrs = List(),
+    econstrs = List(),
+    loc = loc
+  )
+
+  /**
+   * Builds the associated type signature for the struct field
+   */
+  def structAssocTypeSig(tparam: NamedAst.TypeParam, kind: NamedAst.Kind, sym: Symbol.AssocTypeSym, loc: SourceLocation) =
+    NamedAst.Declaration.AssocTypeSig(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = sym,
+      tparam = tparam,
+      kind = kind,
+      tpe = None,
+      loc = loc
+    )
 }

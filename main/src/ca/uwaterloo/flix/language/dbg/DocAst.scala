@@ -200,8 +200,7 @@ object DocAst {
 
     def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], d2: Expr): Expr = {
       val beforeRecord = "new " + sym.toString
-      val name = Name.Label(sym.name, sym.loc)
-      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc)}
+      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(Name.Label(cur._1.name, cur._1.loc), cur._2, acc)}
       DoubleKeyword(beforeRecord, record, "@", Left(d2))
     }
 

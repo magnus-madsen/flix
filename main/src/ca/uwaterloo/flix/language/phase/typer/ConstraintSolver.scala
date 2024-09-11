@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.language.ast.Name
 
 import scala.annotation.tailrec
 
@@ -518,7 +519,10 @@ object ConstraintSolver {
     val orderSym = Symbol.mkTraitSym("Order")
     val sendableSym = Symbol.mkTraitSym("Sendable")
     val toStringSym = Symbol.mkTraitSym("ToString")
-    if (sym == eqSym) {
+    if(sym.name.startsWith("DotGet_") || sym.name.startsWith("DotPut_")) {
+      val field = Name.Label(sym.name.substring("DotGet_".length), loc)
+      TypeError.UndefinedStructField(tpe, renv, field, loc)
+    } else if (sym == eqSym) {
       TypeError.MissingInstanceEq(tpe, renv, loc)
     } else if (sym == orderSym) {
       TypeError.MissingInstanceOrder(tpe, renv, loc)

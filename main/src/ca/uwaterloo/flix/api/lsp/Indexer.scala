@@ -338,11 +338,11 @@ object Indexer {
 
     case Expr.StructGet(exp, field, tpe, eff, loc) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field.sym, field.loc, parent)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field.sym, field.loc, parent)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)

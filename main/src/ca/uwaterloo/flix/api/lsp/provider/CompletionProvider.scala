@@ -247,7 +247,7 @@ object CompletionProvider {
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
       case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.methodName))
       case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.fieldName))
-      case err: ResolutionError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
+      case err: TypeError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
       case err: ParseError => (5, err.sctx)
       case _ => (999, SyntacticContext.Unknown)
     }).minByOption(_._1) match {

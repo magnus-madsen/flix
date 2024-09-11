@@ -16,15 +16,13 @@
 
 mod TestMutList {
     use ToString.toString
-    use MutList.MutList
     use MutList.sameElements
 
     ///
     /// Helper function to test capacity of internal array.
     ///
     def capacity(v: MutList[a, r]): Int32 \ r =
-        let MutList(_, a, _) = v;
-        Array.length(Ref.get(a))
+        Array.length(v->a)
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -1199,18 +1197,16 @@ mod TestMutList {
     @test
     def copy04(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 1000);
-        let MutList(_, l1, n1) = v1;
-        let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2))
+        let v2 = MutList.copy(rc, v1);
+        (v1->l == v2->l) and (v1->a `Array.sameElements` v2->a)
     }
 
     @test
     def copy05(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 3);
-        let MutList(_, l1, n1) = v1;
-        let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2)) and
-            (Array.length(Ref.get(l2)) == 8)
+        let v2 = MutList.copy(rc, v1);
+        (v1->l == v2->l) and (v1->a `Array.sameElements` v2->a) and
+            (Array.length(v2->a) == 8)
     }
 
 

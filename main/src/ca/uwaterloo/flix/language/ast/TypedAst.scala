@@ -182,9 +182,9 @@ object TypedAst {
 
     case class StructNew(sym: Symbol.StructSym, fields: List[(Ast.StructFieldSymUse, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructGet(exp: Expr, sym: Ast.StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, sym: Symbol.StructFieldSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, sym: Ast.StructFieldSymUse, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: Symbol.StructFieldSym, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

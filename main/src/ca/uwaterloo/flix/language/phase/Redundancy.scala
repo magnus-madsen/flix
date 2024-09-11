@@ -599,11 +599,11 @@ object Redundancy {
       visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
 
     case Expr.StructGet(e, field, _, _, _) =>
-      sctx.structFieldSyms.put(field.sym, ())
+      sctx.structFieldSyms.put(field, ())
       visitExp(e, env0, rc)
 
     case Expr.StructPut(e1, field, e2, _, _, _) =>
-      sctx.structFieldSyms.put(field.sym, ())
+      sctx.structFieldSyms.put(field, ())
       visitExp(e1, env0, rc) ++ visitExp(e2, env0, rc)
 
     case Expr.VectorLit(exps, _, _, _) =>

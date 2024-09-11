@@ -1712,53 +1712,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
-  // A bug was introduced into the kinder when it was refactored, so this test fails, but
-  // will reenable it once my next struct kinder support pr is merged
-  test("ResoutionError.MissingStructField.01") {
-    val input =
-      """
-        |mod S {
-        |    struct S[r] { }
-        |    def f(s: S[r]): Unit = {
-        |        s->missingField;
-        |        ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedStructField](result)
-  }
-
-  test("ResolutionError.MissingStructField.02") {
-    val input =
-      """
-        |mod S {
-        |    struct S[r] { }
-        |    def f(s: S[r]): Unit = {
-        |        s->missingField = 3;
-        |        ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedStructField](result)
-  }
-
-  test("ResolutionError.MissingStructField.03") {
-    val input =
-      """
-        |mod S {
-        |    struct S[r] { field1: Int32 }
-        |    def f(s: S[r]): Unit = {
-        |        s->missingField = 3;
-        |        ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedStructField](result)
-  }
-
   test("ResolutionError.TooFewFields.01") {
     val input = """
                   |struct S[r] {
@@ -1838,52 +1791,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
-  }
-
-  test("ResolutionError.MutateImmutableField.01") {
-    val input = """
-                  |mod S {
-                  |    struct S[r] {f: Int32}
-                  |    def f(rc: Region): Unit = {
-                  |        new S @ rc {f = 3};
-                  |        s->f = 2;
-                  |        ()
-                  |    }
-                  |}
-                  |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ImmutableField](result)
-  }
-
-  test("ResolutionError.MutateImmutableField.02") {
-    val input = """
-                  |mod S {
-                  |    struct S[r] {f1: Int32, mut f2: Int32, f3: Int32}
-                  |    def f(rc: Region): Unit = {
-                  |        new S @ rc {f1 = 3, f2 = 4, f3 = 5};
-                  |        s->f2 = 2;
-                  |        s->f1 = 2;
-                  |        ()
-                  |    }
-                  |}
-                  |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ImmutableField](result)
-  }
-
-  test("ResolutionError.MutateImmutableField.03") {
-    val input = """
-                  |mod S {
-                  |    struct S[v, r] {f: Int32, mut f2: v}
-                  |    def f(rc: Region): Unit = {
-                  |        new S @ rc {f = 3, f2 = new S @ rc {f = 4, f2 = 5}};
-                  |        s->f2->f = 2;
-                  |        ()
-                  |    }
-                  |}
-                  |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ImmutableField](result)
   }
 
   test("ResolutionError.StructFieldIncorrectOrder.01") {

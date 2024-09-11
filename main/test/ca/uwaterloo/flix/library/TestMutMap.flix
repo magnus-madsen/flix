@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 mod TestMutMap {
-    use MutMap.MutMap
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

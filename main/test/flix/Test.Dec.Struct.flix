@@ -9,7 +9,7 @@ mod Test.Dec.Struct {
     pub struct Empty[r] {}
 
     pub struct Singleton[r] {
-        singletonfield: Int32
+        field: Int32
     }
 
     pub struct Poly[a, r] {
@@ -18,10 +18,10 @@ mod Test.Dec.Struct {
     }
 
     pub struct PolyMulti[a, b, r] {
-        polymulti_zero: Int32,
-        polymulti_oneA: a,
-        polymulti_oneB: b,
-        polymulti_two: Map[a, b]
+        zero: Int32,
+        oneA: a,
+        oneB: b,
+        two: Map[a, b]
     }
 
     pub struct Recursive[r] {
@@ -30,18 +30,28 @@ mod Test.Dec.Struct {
     }
 
     pub struct PolyRecursive[a, r] {
-        poly_base: a,
-        poly_recurse: PolyRecursive[a, r]
+        base: a,
+        recurse: PolyRecursive[a, r]
     }
 
     pub struct PolyRecursiveNonRegular[a, r] {
-        poly_nonregular_simple: a,
-        poly_nonregular_recurse: PolyRecursiveNonRegular[Poly[a, r], r]
+        base: a,
+        recurse: PolyRecursiveNonRegular[Poly[a, r], r]
     }
 
     pub struct BinaryTree[t, r] {
-        l: Option[BinaryTree[t, r]],
-        r: Option[BinaryTree[t, r]],
+        left: Option[BinaryTree[t, r]],
+        right: Option[BinaryTree[t, r]],
         value: t
     }
+
+    pub struct S[r] {
+        x: Int32
+    }
+
+    def _testStructTrait01(p: a): t \ DotGet_x.Aef[a] with DotGet_x[a] where DotGet_x.FieldType[a] ~ t =
+        (p->x)
+
+    def _testStructTrait02(p: a): Unit \ DotPut_x.Aef[a] with DotPut_x[a] where DotPut_x.FieldType[a] ~ Int32 =
+        (p->x = 3)
 }

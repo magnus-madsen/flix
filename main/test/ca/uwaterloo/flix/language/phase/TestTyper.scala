@@ -1604,6 +1604,32 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TypeError.StructGet.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S1[r] { field1: Int32 }
+        |    struct S2[r] { field2: Int32 }
+        |    def f(s: S1[r]): Unit = {
+        |        s->field2;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.04") {
+    val input =
+      """
+        |struct S[r] { }
+        |def foo(s: S[r]): Int32 = s->field
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
   test("TypeError.StructPut.01") {
     val input =
       """
@@ -1645,5 +1671,77 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S1[r] { field1: Int32 }
+        |    struct S2[r] { field2: Int32 }
+        |    def f(s: S1[r]): Unit = {
+        |        s->field2 = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.04") {
+    val input =
+      """
+        |struct S[r] { }
+        |def foo(s: S[r]): Int32 = s->field = 3
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.MutateImmutableField.01") {
+    val input = """
+                  |mod S {
+                  |    struct S[r] {f: Int32}
+                  |    def f(rc: Region[r]): Unit \ r = {
+                  |        let s = new S @ rc {f = 3};
+                  |        s->f = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.UndefinedStructField](result)
+  }
+
+  test("TypeError.MutateImmutableField.02") {
+    val input = """
+                  |mod S {
+                  |    struct S[r] {f1: Int32, mut f2: Int32, f3: Int32}
+                  |    def f(rc: Region[r]): Unit \ r = {
+                  |        let s = new S @ rc {f1 = 3, f2 = 4, f3 = 5};
+                  |        s->f2 = 2;
+                  |        s->f1 = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.UndefinedStructField](result)
+  }
+
+  test("TypeError.MutateImmutableField.03") {
+    val input = """
+                  |mod S {
+                  |    struct S[v, r] {f: Int32, mut f2: v}
+                  |    def f(rc: Region[r]): Unit \ r = {
+                  |        let s = new S @ rc {f = 3, f2 = new S @ rc {f = 4, f2 = 5}};
+                  |        s->f2->f = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.UndefinedStructField](result)
   }
 }
