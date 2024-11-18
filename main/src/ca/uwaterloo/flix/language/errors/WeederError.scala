@@ -1028,4 +1028,22 @@ object WeederError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that an expression is nested too deeply.
+    *
+    * @param hint     Optional hint with more details about the error
+    * @param loc      The source location of the expression that is nested too deeply.
+    */
+  case class NestedTooDeeply(hint: Option[String] = None, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"Expression is nested too deeply."
+
+    def message(fmt: Formatter): String = {
+      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      s""">> Expression is nested too deeply.
+         |
+         |${fmt.code(loc, s"Here")}$hintStr
+         |""".stripMargin
+    }
+  }
 }
