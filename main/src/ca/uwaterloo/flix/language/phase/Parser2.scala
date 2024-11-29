@@ -1068,7 +1068,7 @@ object Parser2 {
         expect(TokenKind.BracketR, SyntacticContext.Decl.Enum)
       }
       if (at(TokenKind.BracketL)) {
-        Type.parameters()
+        Type.parameters(kind => kind.isRecoverType || kind == TokenKind.CurlyL || kind == TokenKind.ParenL || kind == TokenKind.KeywordWith)
       }
       // Singleton short-hand
       val isShorthand = at(TokenKind.ParenL)
@@ -3046,7 +3046,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Argument)
     }
 
-    def parameters()(implicit s: State): Mark.Closed = {
+    def parameters(breakWhen: TokenKind => Boolean = _.isRecoverType)(implicit s: State): Mark.Closed = {
       val mark = open()
       oneOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
@@ -3054,7 +3054,7 @@ object Parser2 {
         checkForItem = kind => NAME_VARIABLE.contains(kind) || NAME_TYPE.contains(kind),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
-        breakWhen = _.isRecoverType,
+        breakWhen = breakWhen,
         context = SyntacticContext.Type.OtherType
       ) match {
         case Some(error) => closeWithError(mark, error)
