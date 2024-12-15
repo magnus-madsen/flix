@@ -48,42 +48,42 @@ instance Box[Bool] {
 
 instance Box[Char] {
     type Boxed = Character
-    pub def box(x: Char): Character = unsafe Character.valueOf(x)
-    pub def unbox(x: Character): Char = unsafe x.charValue()
+    pub def box(x: Char): Character = unsafely IO run Character.valueOf(x)
+    pub def unbox(x: Character): Char = unsafely IO run x.charValue()
 }
 
 instance Box[Float32] {
     type Boxed = Float
-    pub def box(x: Float32): Float = unsafe Float.valueOf(x)
-    pub def unbox(x: Float): Float32 = unsafe x.floatValue()
+    pub def box(x: Float32): Float = unsafely IO run Float.valueOf(x)
+    pub def unbox(x: Float): Float32 = unsafely IO run x.floatValue()
 }
 
 instance Box[Float64] {
     type Boxed = Double
-    pub def box(x: Float64): Double = unsafe Double.valueOf(x)
-    pub def unbox(x: Double): Float64 = unsafe x.doubleValue()
+    pub def box(x: Float64): Double = unsafely IO run Double.valueOf(x)
+    pub def unbox(x: Double): Float64 = unsafely IO run x.doubleValue()
 }
 
 instance Box[Int8] {
     type Boxed = Byte
-    pub def box(x: Int8): Byte = unsafe Byte.valueOf(x)
-    pub def unbox(x: Byte): Int8 = unsafe x.byteValue()
+    pub def box(x: Int8): Byte = unsafely IO run Byte.valueOf(x)
+    pub def unbox(x: Byte): Int8 = unsafely IO run x.byteValue()
 }
 
 instance Box[Int16] {
     type Boxed = Short
-    pub def box(x: Int16): Short = unsafe Short.valueOf(x)
-    pub def unbox(x: Short): Int16 = unsafe x.shortValue()
+    pub def box(x: Int16): Short = unsafely IO run Short.valueOf(x)
+    pub def unbox(x: Short): Int16 = unsafely IO run x.shortValue()
 }
 
 instance Box[Int32] {
     type Boxed = Integer
-    pub def box(x: Int32): Integer = unsafe Integer.valueOf(x)
-    pub def unbox(x: Integer): Int32 = unsafe x.intValue()
+    pub def box(x: Int32): Integer = unsafely IO run Integer.valueOf(x)
+    pub def unbox(x: Integer): Int32 = unsafely IO run x.intValue()
 }
 
 instance Box[Int64] {
     type Boxed = Long
-    pub def box(x: Int64): Long = unsafe Long.valueOf(x)
-    pub def unbox(x: Long): Int64 = unsafe x.longValue()
+    pub def box(x: Int64): Long = unsafely IO run Long.valueOf(x)
+    pub def unbox(x: Long): Int64 = unsafely IO run x.longValue()
 }

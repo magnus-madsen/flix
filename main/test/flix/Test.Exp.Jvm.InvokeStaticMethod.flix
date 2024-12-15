@@ -33,7 +33,7 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
 
     @test
     def testInvokePureStaticMethod01(): Bool =
-        unsafe JString.valueOf(true) == "true"
+        unsafely IO run JString.valueOf(true) == "true"
 
     @test
     def testInvokeObjectStaticMethod01(): JString \ IO =
@@ -51,7 +51,7 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
 
     @test
     def testInvokeInheritedStaticMethod01(): Bool =
-        unsafe TestClassWithInheritedMethod.staticMethod(1) == 2
+        unsafely IO run TestClassWithInheritedMethod.staticMethod(1) == 2
 
     @test
     def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region rc {

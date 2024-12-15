@@ -238,19 +238,19 @@ instance Order[Float64] {
 instance Order[BigDecimal] {
 
     redef less(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) < 0
+        (unsafely IO run x.compareTo(y)) < 0
 
     redef lessEqual(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) <= 0
+        (unsafely IO run x.compareTo(y)) <= 0
 
     redef greater(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) > 0
+        (unsafely IO run x.compareTo(y)) > 0
 
     redef greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) >= 0
+        (unsafely IO run x.compareTo(y)) >= 0
 
     pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-        match (unsafe x.compareTo(y)) {
+        match (unsafely IO run x.compareTo(y)) {
             case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
             case _          => Comparison.GreaterThan
@@ -341,19 +341,19 @@ instance Order[Int64] {
 instance Order[BigInt] {
 
     redef less(x: BigInt, y: BigInt): Bool =
-        (unsafe x.compareTo(y)) < 0
+        (unsafely IO run x.compareTo(y)) < 0
 
     redef lessEqual(x: BigInt, y: BigInt): Bool =
-        (unsafe x.compareTo(y)) <= 0
+        (unsafely IO run x.compareTo(y)) <= 0
 
     redef greater(x: BigInt, y: BigInt): Bool =
-        (unsafe x.compareTo(y)) > 0
+        (unsafely IO run x.compareTo(y)) > 0
 
     redef greaterEqual(x: BigInt, y: BigInt): Bool =
-        (unsafe x.compareTo(y)) >= 0
+        (unsafely IO run x.compareTo(y)) >= 0
 
     pub def compare(x: BigInt, y: BigInt): Comparison =
-        match (unsafe x.compareTo(y)) {
+        match (unsafely IO run x.compareTo(y)) {
             case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
             case _          => Comparison.GreaterThan
@@ -364,7 +364,7 @@ instance Order[BigInt] {
 instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
-        Comparison.fromInt32((unsafe x.compareTo(y)))
+        Comparison.fromInt32((unsafely IO run x.compareTo(y)))
 
 }
 

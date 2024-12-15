@@ -1195,16 +1195,16 @@ mod TestInt32 {
     @test
     def valueOf01(): Bool =
         let i = Int32.valueOf(0);
-        unsafe i.equals(Int32.valueOf(0))
+        unsafely IO run i.equals(Int32.valueOf(0))
 
     @test
     def valueOf02(): Bool =
         let i = Int32.valueOf(1);
-        unsafe i.equals(Int32.valueOf(1))
+        unsafely IO run i.equals(Int32.valueOf(1))
 
     @test
     def valueOf03(): Bool =
         let i = Int32.valueOf(-1);
-        unsafe i.equals(Int32.valueOf(-1))
+        unsafely IO run i.equals(Int32.valueOf(-1))
 
 }

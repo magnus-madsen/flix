@@ -69,15 +69,15 @@ mod Regex {
     ///
     def toInt(flag: Flag): Int32 =
         match flag {
-            case CanonEq                => unsafe Pattern.CANON_EQ
-            case CaseInsenstive         => unsafe Pattern.CASE_INSENSITIVE
-            case Comments               => unsafe Pattern.COMMENTS
-            case Dotall                 => unsafe Pattern.DOTALL
-            case Literal                => unsafe Pattern.LITERAL
-            case Multiline              => unsafe Pattern.MULTILINE
-            case UnicodeCase            => unsafe Pattern.UNICODE_CASE
-            case UnicodeCharacterClass  => unsafe Pattern.UNICODE_CHARACTER_CLASS
-            case UnixLines              => unsafe Pattern.UNIX_LINES
+            case CanonEq                => unsafely IO run Pattern.CANON_EQ
+            case CaseInsenstive         => unsafely IO run Pattern.CASE_INSENSITIVE
+            case Comments               => unsafely IO run Pattern.COMMENTS
+            case Dotall                 => unsafely IO run Pattern.DOTALL
+            case Literal                => unsafely IO run Pattern.LITERAL
+            case Multiline              => unsafely IO run Pattern.MULTILINE
+            case UnicodeCase            => unsafely IO run Pattern.UNICODE_CASE
+            case UnicodeCharacterClass  => unsafely IO run Pattern.UNICODE_CHARACTER_CLASS
+            case UnixLines              => unsafely IO run Pattern.UNIX_LINES
         }
 
     ///
@@ -102,7 +102,7 @@ mod Regex {
     ///
     pub def unmatchable(): Regex =
         try {
-            unsafe Pattern.compile("^\\b$")
+            unsafely IO run Pattern.compile("^\\b$")
         } catch {
             case _: Exception => unreachable!()
         }
@@ -111,19 +111,19 @@ mod Regex {
     /// Return the regular expression string that matches the the literal string `s`.
     ///
     pub def quote(s: String): String =
-        unsafe Pattern.quote(s)
+        unsafely IO run Pattern.quote(s)
 
     ///
     /// Return the regular expression string used to build this Regex.
     ///
     pub def pattern(rgx: Regex): String =
-        unsafe rgx.pattern()
+        unsafely IO run rgx.pattern()
 
     ///
     /// Return the flags used to build the Regex `rgx`.
     ///
     pub def flags(rgx: Regex): Set[Flag] =
-        let i = unsafe rgx.flags();
+        let i = unsafely IO run rgx.flags();
         listFlags(i) |> List.toSet
 
 
@@ -132,7 +132,7 @@ mod Regex {
     ///
     pub def isMatch(rgx: Regex, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, rgx, s);
-        unsafe m1.matches()
+        unsafely IO run m1.matches()
     }
 
     ///
@@ -185,14 +185,14 @@ mod Regex {
     /// Splits the string `s` around matches of the Regex `regex`.
     ///
     pub def split(regex: {regex = Regex}, s: String): List[String] =
-        unsafe Array.toList(unsafe regex#regex.split(s))
+        unsafely IO run Array.toList(unsafely IO run regex#regex.split(s))
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unsafe m1.replaceAll(dst#dst)
+        unsafely IO run m1.replaceAll(dst#dst)
     }
 
     ///
@@ -200,7 +200,7 @@ mod Regex {
     ///
     pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unsafe m1.replaceFirst(dst#dst)
+        unsafely IO run m1.replaceFirst(dst#dst)
     }
 
     ///
@@ -208,7 +208,7 @@ mod Regex {
     ///
     pub def startsWith(prefix: {prefix = Regex}, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, prefix#prefix, s);
-        unsafe m1.lookingAt()
+        unsafely IO run m1.lookingAt()
     }
 
     ///
@@ -416,7 +416,7 @@ mod Regex {
     ///
     pub def isMatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
         match newMatcherWithBounds(rc, rgx, start, end, s) {
-            case Ok(m)  => {let Matcher(m1) = m; unsafe m1.matches()}
+            case Ok(m)  => {let Matcher(m1) = m; unsafely IO run m1.matches()}
             case Err(_) => false
         }
     }

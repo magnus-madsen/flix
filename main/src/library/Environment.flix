@@ -29,7 +29,7 @@ mod Environment {
     /// Returns the arguments passed to the program via the command line.
     ///
     pub def getArgs(): List[String] =
-        unsafe Array.toList(Global.getArgs())
+        unsafely IO run Array.toList(Global.getArgs())
 
     ///
     /// Returns an map of the current system environment.
@@ -49,7 +49,7 @@ mod Environment {
     ///
     pub def getVar(name: String): Option[String] =
         try {
-            let result = unsafe System.getenv(name);
+            let result = unsafely {Env, IO} run System.getenv(name);
             Object.toOption(result)
         } catch {
             case _: Exception => None
@@ -60,7 +60,7 @@ mod Environment {
     ///
     pub def getProp(name: String): Option[String] =
         try {
-            let result = unsafe System.getProperty(name);
+            let result = unsafely {IO, Sys} run System.getProperty(name);
             Object.toOption(result)
         } catch {
             case _: Exception => None
@@ -84,18 +84,18 @@ mod Environment {
     ///
     ///  Returns the file separator
     ///
-    pub def getFileSeparator(): String = unsafe JFile.separator
+    pub def getFileSeparator(): String = unsafely IO run JFile.separator
 
     ///
     /// Returns the path separator
     ///
-    pub def getPathSeparator(): String = unsafe JFile.pathSeparator
+    pub def getPathSeparator(): String = unsafely IO run JFile.pathSeparator
 
     ///
     /// Returns the system line separator
     ///
     pub def getLineSeparator(): String =
-        unsafe System.lineSeparator()
+        unsafely {IO, Sys} run System.lineSeparator()
 
     ///
     /// Returns the user's current working directory
@@ -123,13 +123,13 @@ mod Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        unsafe Runtime.getRuntime().availableProcessors()
+        unsafely {Env, IO, Sys} run Runtime.getRuntime().availableProcessors()
 
     def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
-        if (unsafe iter.hasNext())
-            let e = unsafe unchecked_cast(iter.next() as Entry);
-            let k = unsafe unchecked_cast(e.getKey() as String);
-            let v = unsafe unchecked_cast(e.getValue() as String);
+        if (unsafely IO run iter.hasNext())
+            let e = unsafely IO run unchecked_cast(iter.next() as Entry);
+            let k = unsafely IO run unchecked_cast(e.getKey() as String);
+            let v = unsafely IO run unchecked_cast(e.getValue() as String);
             getEnvHelper(iter, Map.insert(k, v, m))
         else
             m

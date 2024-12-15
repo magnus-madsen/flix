@@ -33,7 +33,7 @@ instance Neg[Float64] {
 }
 
 instance Neg[BigDecimal] {
-    pub def neg(x: BigDecimal): BigDecimal = unsafe x.negate()
+    pub def neg(x: BigDecimal): BigDecimal = unsafely IO run x.negate()
 }
 
 instance Neg[Int8] {
@@ -53,5 +53,5 @@ instance Neg[Int64] {
 }
 
 instance Neg[BigInt] {
-    pub def neg(x: BigInt): BigInt = unsafe x.negate()
+    pub def neg(x: BigInt): BigInt = unsafely IO run x.negate()
 }

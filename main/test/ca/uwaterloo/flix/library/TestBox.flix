@@ -53,16 +53,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def charUnbox01(): Bool = unsafe unbox(Character.valueOf('a')) == 'a'
+    def charUnbox01(): Bool = unsafely IO run unbox(Character.valueOf('a')) == 'a'
 
     @test
-    def charUnbox02(): Bool = unsafe unbox(Character.valueOf('Z')) == 'Z'
+    def charUnbox02(): Bool = unsafely IO run unbox(Character.valueOf('Z')) == 'Z'
 
     @test
-    def charBox01(): Bool = unsafe box('a').equals(Character.valueOf('a'))
+    def charBox01(): Bool = unsafely IO run box('a').equals(Character.valueOf('a'))
 
     @test
-    def charBox02(): Bool = unsafe box('Z').equals(Character.valueOf('Z'))
+    def charBox02(): Bool = unsafely IO run box('Z').equals(Character.valueOf('Z'))
 
     @test
     def charRoundTrip01(): Bool = unbox(box('a')) == 'a'
@@ -75,16 +75,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def float32Unbox01(): Bool = unsafe unbox(Float.valueOf(1.23f32)) == 1.23f32
+    def float32Unbox01(): Bool = unsafely IO run unbox(Float.valueOf(1.23f32)) == 1.23f32
 
     @test
-    def float32Unbox02(): Bool = unsafe unbox(Float.valueOf(-4.56f32)) == -4.56f32
+    def float32Unbox02(): Bool = unsafely IO run unbox(Float.valueOf(-4.56f32)) == -4.56f32
 
     @test
-    def float32Box01(): Bool = unsafe box(1.23f32).equals(Float.valueOf(1.23f32))
+    def float32Box01(): Bool = unsafely IO run box(1.23f32).equals(Float.valueOf(1.23f32))
 
     @test
-    def float32Box02(): Bool = unsafe box(-4.56f32).equals(Float.valueOf(-4.56f32))
+    def float32Box02(): Bool = unsafely IO run box(-4.56f32).equals(Float.valueOf(-4.56f32))
 
     @test
     def float32RoundTrip01(): Bool = unbox(box(1.23f32)) == 1.23f32
@@ -93,26 +93,26 @@ mod TestBox {
     def float32RoundTrip02(): Bool = unbox(box(-4.56f32)) == -4.56f32
 
     @test
-    def float32MaxValue(): Bool = unsafe unbox(box(Float.MAX_VALUE)) == Float.MAX_VALUE
+    def float32MaxValue(): Bool = unsafely IO run unbox(box(Float.MAX_VALUE)) == Float.MAX_VALUE
 
     @test
-    def float32MinValue(): Bool = unsafe unbox(box(Float.MIN_VALUE)) == Float.MIN_VALUE
+    def float32MinValue(): Bool = unsafely IO run unbox(box(Float.MIN_VALUE)) == Float.MIN_VALUE
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def float64Unbox01(): Bool = unsafe unbox(Double.valueOf(1.23)) == 1.23
+    def float64Unbox01(): Bool = unsafely IO run unbox(Double.valueOf(1.23)) == 1.23
 
     @test
-    def float64Unbox02(): Bool = unsafe unbox(Double.valueOf(-4.56)) == -4.56
+    def float64Unbox02(): Bool = unsafely IO run unbox(Double.valueOf(-4.56)) == -4.56
 
     @test
-    def float64Box01(): Bool = unsafe box(1.23).equals(Double.valueOf(1.23))
+    def float64Box01(): Bool = unsafely IO run box(1.23).equals(Double.valueOf(1.23))
 
     @test
-    def float64Box02(): Bool = unsafe box(-4.56).equals(Double.valueOf(-4.56))
+    def float64Box02(): Bool = unsafely IO run box(-4.56).equals(Double.valueOf(-4.56))
 
     @test
     def float64RoundTrip01(): Bool = unbox(box(1.23)) == 1.23
@@ -121,26 +121,26 @@ mod TestBox {
     def float64RoundTrip02(): Bool = unbox(box(-4.56)) == -4.56
 
     @test
-    def float64MaxValue(): Bool = unsafe unbox(box(Double.MAX_VALUE)) == Double.MAX_VALUE
+    def float64MaxValue(): Bool = unsafely IO run unbox(box(Double.MAX_VALUE)) == Double.MAX_VALUE
 
     @test
-    def float64MinValue(): Bool = unsafe unbox(box(Double.MIN_VALUE)) == Double.MIN_VALUE
+    def float64MinValue(): Bool = unsafely IO run unbox(box(Double.MIN_VALUE)) == Double.MIN_VALUE
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int8Unbox01(): Bool = unsafe unbox(Byte.valueOf(42i8)) == 42i8
+    def int8Unbox01(): Bool = unsafely IO run unbox(Byte.valueOf(42i8)) == 42i8
 
     @test
-    def int8Unbox02(): Bool = unsafe unbox(Byte.valueOf(-128i8)) == -128i8
+    def int8Unbox02(): Bool = unsafely IO run unbox(Byte.valueOf(-128i8)) == -128i8
 
     @test
-    def int8Box01(): Bool = unsafe box(42i8).equals(Byte.valueOf(42i8))
+    def int8Box01(): Bool = unsafely IO run box(42i8).equals(Byte.valueOf(42i8))
 
     @test
-    def int8Box02(): Bool = unsafe box(-128i8).equals(Byte.valueOf(-128i8))
+    def int8Box02(): Bool = unsafely IO run box(-128i8).equals(Byte.valueOf(-128i8))
 
     @test
     def int8RoundTrip01(): Bool = unbox(box(42i8)) == 42i8
@@ -149,26 +149,26 @@ mod TestBox {
     def int8RoundTrip02(): Bool = unbox(box(-128i8)) == -128i8
 
     @test
-    def int8MaxValue(): Bool = unsafe unbox(box(Byte.MAX_VALUE)) == Byte.MAX_VALUE
+    def int8MaxValue(): Bool = unsafely IO run unbox(box(Byte.MAX_VALUE)) == Byte.MAX_VALUE
 
     @test
-    def int8MinValue(): Bool = unsafe unbox(box(Byte.MIN_VALUE)) == Byte.MIN_VALUE
+    def int8MinValue(): Bool = unsafely IO run unbox(box(Byte.MIN_VALUE)) == Byte.MIN_VALUE
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int16Unbox01(): Bool = unsafe unbox(Short.valueOf(12345i16)) == 12345i16
+    def int16Unbox01(): Bool = unsafely IO run unbox(Short.valueOf(12345i16)) == 12345i16
 
     @test
-    def int16Unbox02(): Bool = unsafe unbox(Short.valueOf(-32768i16)) == -32768i16
+    def int16Unbox02(): Bool = unsafely IO run unbox(Short.valueOf(-32768i16)) == -32768i16
 
     @test
-    def int16Box01(): Bool = unsafe box(12345i16).equals(Short.valueOf(12345i16))
+    def int16Box01(): Bool = unsafely IO run box(12345i16).equals(Short.valueOf(12345i16))
 
     @test
-    def int16Box02(): Bool = unsafe box(-32768i16).equals(Short.valueOf(-32768i16))
+    def int16Box02(): Bool = unsafely IO run box(-32768i16).equals(Short.valueOf(-32768i16))
 
     @test
     def int16RoundTrip01(): Bool = unbox(box(12345i16)) == 12345i16
@@ -177,26 +177,26 @@ mod TestBox {
     def int16RoundTrip02(): Bool = unbox(box(-32768i16)) == -32768i16
 
     @test
-    def int16MaxValue(): Bool = unsafe unbox(box(Short.MAX_VALUE)) == Short.MAX_VALUE
+    def int16MaxValue(): Bool = unsafely IO run unbox(box(Short.MAX_VALUE)) == Short.MAX_VALUE
 
     @test
-    def int16MinValue(): Bool = unsafe unbox(box(Short.MIN_VALUE)) == Short.MIN_VALUE
+    def int16MinValue(): Bool = unsafely IO run unbox(box(Short.MIN_VALUE)) == Short.MIN_VALUE
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int32Unbox01(): Bool = unsafe unbox(Integer.valueOf(1234567890i32)) == 1234567890i32
+    def int32Unbox01(): Bool = unsafely IO run unbox(Integer.valueOf(1234567890i32)) == 1234567890i32
 
     @test
-    def int32Unbox02(): Bool = unsafe unbox(Integer.valueOf(-2147483648i32)) == -2147483648i32
+    def int32Unbox02(): Bool = unsafely IO run unbox(Integer.valueOf(-2147483648i32)) == -2147483648i32
 
     @test
-    def int32Box01(): Bool = unsafe box(1234567890i32).equals(Integer.valueOf(1234567890i32))
+    def int32Box01(): Bool = unsafely IO run box(1234567890i32).equals(Integer.valueOf(1234567890i32))
 
     @test
-    def int32Box02(): Bool = unsafe box(-2147483648i32).equals(Integer.valueOf(-2147483648i32))
+    def int32Box02(): Bool = unsafely IO run box(-2147483648i32).equals(Integer.valueOf(-2147483648i32))
 
     @test
     def int32RoundTrip01(): Bool = unbox(box(1234567890i32)) == 1234567890i32
@@ -205,26 +205,26 @@ mod TestBox {
     def int32RoundTrip02(): Bool = unbox(box(-2147483648i32)) == -2147483648i32
 
     @test
-    def int32MaxValue(): Bool = unsafe unbox(box(Integer.MAX_VALUE)) == Integer.MAX_VALUE
+    def int32MaxValue(): Bool = unsafely IO run unbox(box(Integer.MAX_VALUE)) == Integer.MAX_VALUE
 
     @test
-    def int32MinValue(): Bool = unsafe unbox(box(Integer.MIN_VALUE)) == Integer.MIN_VALUE
+    def int32MinValue(): Bool = unsafely IO run unbox(box(Integer.MIN_VALUE)) == Integer.MIN_VALUE
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int64Unbox01(): Bool = unsafe unbox(Long.valueOf(1234567890123456789i64)) == 1234567890123456789i64
+    def int64Unbox01(): Bool = unsafely IO run unbox(Long.valueOf(1234567890123456789i64)) == 1234567890123456789i64
 
     @test
-    def int64Unbox02(): Bool = unsafe unbox(Long.valueOf(-9223372036854775808i64)) == -9223372036854775808i64
+    def int64Unbox02(): Bool = unsafely IO run unbox(Long.valueOf(-9223372036854775808i64)) == -9223372036854775808i64
 
     @test
-    def int64Box01(): Bool = unsafe box(1234567890123456789i64).equals(Long.valueOf(1234567890123456789i64))
+    def int64Box01(): Bool = unsafely IO run box(1234567890123456789i64).equals(Long.valueOf(1234567890123456789i64))
 
     @test
-    def int64Box02(): Bool = unsafe box(-9223372036854775808i64).equals(Long.valueOf(-9223372036854775808i64))
+    def int64Box02(): Bool = unsafely IO run box(-9223372036854775808i64).equals(Long.valueOf(-9223372036854775808i64))
 
     @test
     def int64RoundTrip01(): Bool = unbox(box(1234567890123456789i64)) == 1234567890123456789i64
@@ -233,9 +233,9 @@ mod TestBox {
     def int64RoundTrip02(): Bool = unbox(box(-9223372036854775808i64)) == -9223372036854775808i64
 
     @test
-    def int64MaxValue(): Bool = unsafe unbox(box(Long.MAX_VALUE)) == Long.MAX_VALUE
+    def int64MaxValue(): Bool = unsafely IO run unbox(box(Long.MAX_VALUE)) == Long.MAX_VALUE
 
     @test
-    def int64MinValue(): Bool = unsafe unbox(box(Long.MIN_VALUE)) == Long.MIN_VALUE
+    def int64MinValue(): Bool = unsafely IO run unbox(box(Long.MIN_VALUE)) == Long.MIN_VALUE
 
 }

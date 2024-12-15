@@ -52,7 +52,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
 
     @test
     def testInvokePureConstructor01(): JString =
-        unsafe new JString("Hello World")
+        unsafely IO run new JString("Hello World")
 
     // This test doesn't pass unless explicit cast is done
     @test

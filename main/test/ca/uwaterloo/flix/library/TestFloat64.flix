@@ -785,16 +785,16 @@ mod TestFloat64 {
     @test
     def valueOf01(): Bool =
         let d = Float64.valueOf(0.0f64);
-        unsafe d.equals(Float64.valueOf(0.0f64))
+        unsafely IO run d.equals(Float64.valueOf(0.0f64))
 
     @test
     def valueOf02(): Bool =
         let d = Float64.valueOf(1.0f64);
-        unsafe d.equals(Float64.valueOf(1.0f64))
+        unsafely IO run d.equals(Float64.valueOf(1.0f64))
 
     @test
     def valueOf03(): Bool =
         let d = Float64.valueOf(-1.0f64);
-        unsafe d.equals(Float64.valueOf(-1.0f64))
+        unsafely IO run d.equals(Float64.valueOf(-1.0f64))
 
 }

@@ -3,10 +3,10 @@ mod Test.Handler.Gen.AtomicInteger {
     import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        unsafe new AtomicInteger(n)
+        unsafely IO run new AtomicInteger(n)
 
     def toInt(n: AtomicInteger): Int32 =
-        unsafe n.intValue()
+        unsafely IO run n.intValue()
 
     eff Gen {
         def gen(): AtomicInteger

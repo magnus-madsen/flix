@@ -39,13 +39,13 @@ mod BigDecimal {
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: BigDecimal): BigDecimal =
-        unsafe x.abs()
+        unsafely IO run x.abs()
 
     ///
     /// Returns `x` raised to the power of `n`.
     ///
     pub def pow(x: BigDecimal, n: Int32): BigDecimal =
-        unsafe x.pow(n)
+        unsafely IO run x.pow(n)
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -56,20 +56,20 @@ mod BigDecimal {
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
     pub def compare(x: BigDecimal, y: BigDecimal): Int32 =
-        unsafe x.compareTo(y)
+        unsafely IO run x.compareTo(y)
 
     ///
     /// Returns `1` if `x > 0`, `-1` if `x < 0`, and `0` if `x = 0`.
     ///
     pub def signum(x: BigDecimal): Int32 =
-        unsafe x.signum()
+        unsafely IO run x.signum()
 
     ///
     /// Parse the string `s` as an BigDecimal, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[BigDecimal] = try {
-        Some(unsafe new BigDecimal(s.strip()))
+        Some(unsafely IO run new BigDecimal(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -78,35 +78,35 @@ mod BigDecimal {
     /// Returns `x` as a "plain string" without an exponent field.
     ///
     pub def toPlainString(x: BigDecimal): String =
-        unsafe x.toPlainString()
+        unsafely IO run x.toPlainString()
 
     ///
     /// Compare `x` and `y` for equality normalizing any difference in scale.
     ///
     pub def numericEquals(x: BigDecimal, y: BigDecimal): Bool =
-        unsafe x.compareTo(y) == 0
+        unsafely IO run x.compareTo(y) == 0
 
     ///
     /// Returns the scale of `x`.
     ///
     pub def scale(x: BigDecimal): Int32 =
-        unsafe x.scale()
+        unsafely IO run x.scale()
 
     ///
     /// Returns the precision of `x`.
     ///
     pub def precision(x: BigDecimal): Int32 =
-        unsafe x.precision()
+        unsafely IO run x.precision()
 
     ///
     /// Returns `x` rounded up to a BigDecimal representing the nearest larger integer value.
     ///
-    pub def ceil(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.CEILING)
+    pub def ceil(x: BigDecimal): BigDecimal = unsafely IO run x.setScale(0, RoundingMode.CEILING)
 
     ///
     /// Returns `x` rounded down to a BigDecimal representing the nearest smaller integer value.
     ///
-    pub def floor(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.FLOOR)
+    pub def floor(x: BigDecimal): BigDecimal = unsafely IO run x.setScale(0, RoundingMode.FLOOR)
 
     ///
     /// Returns `x` rounded to a BigDecimal representing the nearest integer value.
@@ -114,7 +114,7 @@ mod BigDecimal {
     /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
     /// close, `x` will be rounded to an even value (i.e. `round(0.5ff64) == 0.0ff64`).
     ///
-    pub def round(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.HALF_EVEN)
+    pub def round(x: BigDecimal): BigDecimal = unsafely IO run x.setScale(0, RoundingMode.HALF_EVEN)
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -153,7 +153,7 @@ mod BigDecimal {
         if (x < Int32.toBigDecimal(Int32.minValue()) or x > Int32.toBigDecimal(Int32.maxValue()))
             None
         else
-            Some(unsafe x.intValue())
+            Some(unsafely IO run x.intValue())
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -168,13 +168,13 @@ mod BigDecimal {
         if (x < Int64.toBigDecimal(Int64.minValue()) or x > Int64.toBigDecimal(Int64.maxValue()))
             None
         else
-            Some(unsafe x.longValue())
+            Some(unsafely IO run x.longValue())
 
     ///
     /// Convert `x` to a `BigInt`.
     ///
     pub def toBigInt(x: BigDecimal): BigInt =
-        unsafe x.toBigInteger()
+        unsafely IO run x.toBigInteger()
 
     ///
     /// Convert `x` to an `Option[Float32]`.
@@ -186,7 +186,7 @@ mod BigDecimal {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigDecimal): Option[Float32] =
-        let d = unsafe x.floatValue();
+        let d = unsafely IO run x.floatValue();
         if (Float32.isFinite(d))
             Some(d)
         else
@@ -202,7 +202,7 @@ mod BigDecimal {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigDecimal): Option[Float64] =
-        let d = unsafe x.doubleValue();
+        let d = unsafely IO run x.doubleValue();
         if (Float64.isFinite(d))
             Some(d)
         else

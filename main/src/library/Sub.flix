@@ -33,7 +33,7 @@ instance Sub[Float64] {
 }
 
 instance Sub[BigDecimal] {
-    pub def sub(x: BigDecimal, y: BigDecimal): BigDecimal = unsafe x.subtract(y)
+    pub def sub(x: BigDecimal, y: BigDecimal): BigDecimal = unsafely IO run x.subtract(y)
 }
 
 instance Sub[Int8] {
@@ -53,5 +53,5 @@ instance Sub[Int64] {
 }
 
 instance Sub[BigInt] {
-    pub def sub(x: BigInt, y: BigInt): BigInt = unsafe x.subtract(y)
+    pub def sub(x: BigInt, y: BigInt): BigInt = unsafely IO run x.subtract(y)
 }

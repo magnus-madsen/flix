@@ -45,7 +45,7 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
 
     @test
     def testInvokeInheritedStaticMethod01(): Bool =
-        unsafe TestClassWithInheritedMethod.staticMethod(1) == 2
+        unsafely IO run TestClassWithInheritedMethod.staticMethod(1) == 2
 
     @test
     def testInvokeStaticMethod_WithArrayParam(): Bool \ IO = region rc {

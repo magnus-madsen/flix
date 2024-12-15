@@ -843,16 +843,16 @@ def charValue03(): Bool =
 @test
 def valueOf01(): Bool =
     let c = Char.valueOf('0');
-    unsafe c.equals(Char.valueOf('0'))
+    unsafely IO run c.equals(Char.valueOf('0'))
 
 @test
 def valueOf02(): Bool =
     let c = Char.valueOf('A');
-    unsafe c.equals(Char.valueOf('A'))
+    unsafely IO run c.equals(Char.valueOf('A'))
 
 @test
 def valueOf03(): Bool =
     let c = Char.valueOf('+');
-    unsafe c.equals(Char.valueOf('+'))
+    unsafely IO run c.equals(Char.valueOf('+'))
 
 }

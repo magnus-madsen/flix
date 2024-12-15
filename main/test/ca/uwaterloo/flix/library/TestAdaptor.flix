@@ -51,12 +51,12 @@ mod TestAdaptor {
 
     @test
     def fromOptional01(): Bool \ {} =
-        let o = unsafe Optional.empty();
+        let o = unsafely IO run Optional.empty();
         Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o) == (None : Option[String])
 
     @test
     def fromOptional02(): Bool \ {} =
-        let o = unsafe Optional.of("Hello");
+        let o = unsafely IO run Optional.of("Hello");
         Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o) == Some("Hello")
 
     /////////////////////////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ mod TestAdaptor {
 
     @test
     def fromMapEntry01(): Bool \ {} =
-        let e = unsafe JMap.entry("hello", "world");
+        let e = unsafely IO run JMap.entry("hello", "world");
         Adaptor.fromMapEntry((Proxy.Proxy: Proxy[String]), (Proxy.Proxy: Proxy[String]), e) == ("hello", "world")
 
     /////////////////////////////////////////////////////////////////////////////
@@ -74,17 +74,17 @@ mod TestAdaptor {
 
     @test
     def fromList01(): Bool \ {} =
-        let l = unsafe JList.of();
+        let l = unsafely IO run JList.of();
         Adaptor.fromList(l) == (List#{} : List[String])
 
     @test
     def fromList02(): Bool \ {} =
-        let l = unsafe JList.of("hello");
+        let l = unsafely IO run JList.of("hello");
         Adaptor.fromList(l) == List#{"hello"}
 
     @test
     def fromList03(): Bool \ {} =
-        let l = unsafe JList.of("hello", "world");
+        let l = unsafely IO run JList.of("hello", "world");
         Adaptor.fromList(l) == List#{"hello", "world"}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -93,19 +93,19 @@ mod TestAdaptor {
 
     @test
     def fromListToIterator01(): Bool \ {} = region rc {
-        let l = unsafe JList.of();
+        let l = unsafely IO run JList.of();
         Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)) == (List#{} : List[String])
     }
 
     @test
     def fromListToIterator02(): Bool \ {} = region rc {
-        let l = unsafe JList.of("hello");
+        let l = unsafely IO run JList.of("hello");
         Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)) == List#{"hello"}
     }
 
     @test
     def fromListToIterator03(): Bool \ {} = region rc {
-        let l = unsafe JList.of("hello", "world");
+        let l = unsafely IO run JList.of("hello", "world");
         Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)) == List#{"hello", "world"}
     }
 
@@ -115,17 +115,17 @@ mod TestAdaptor {
 
     @test
     def fromSet01(): Bool \ {} =
-        let s = unsafe JSet.of();
+        let s = unsafely IO run JSet.of();
         Adaptor.fromSet(s) == (Set#{} : Set[String])
 
     @test
     def fromSet02(): Bool \ {} =
-        let s = unsafe JSet.of("hello");
+        let s = unsafely IO run JSet.of("hello");
         Adaptor.fromSet(s) == Set#{"hello"}
 
     @test
     def fromSet03(): Bool \ {} =
-        let s = unsafe JSet.of("hello", "world");
+        let s = unsafely IO run JSet.of("hello", "world");
         Adaptor.fromSet(s) == Set#{"hello", "world"}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -134,19 +134,19 @@ mod TestAdaptor {
 
     @test
     def fromSetToIterator01(): Bool \ {} = region rc {
-        let s = unsafe JSet.of();
+        let s = unsafely IO run JSet.of();
         Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == (Set#{} : Set[String])
     }
 
     @test
     def fromSetToIterator02(): Bool \ {} = region rc {
-        let s = unsafe JSet.of("hello");
+        let s = unsafely IO run JSet.of("hello");
         Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == Set#{"hello"}
     }
 
     @test
     def fromSetToIterator03(): Bool \ {} = region rc {
-        let s = unsafe JSet.of("hello", "world");
+        let s = unsafely IO run JSet.of("hello", "world");
         Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == Set#{"hello", "world"}
     }
 
@@ -156,17 +156,17 @@ mod TestAdaptor {
 
     @test
     def fromMap01(): Bool \ {} =
-        let m = unsafe JMap.of();
+        let m = unsafely IO run JMap.of();
         Adaptor.fromMap(m) == (Map#{} : Map[String, String])
 
     @test
     def fromMap02(): Bool \ {} =
-        let m = unsafe JMap.of("a", "hello");
+        let m = unsafely IO run JMap.of("a", "hello");
         Adaptor.fromMap(m) == Map#{"a" => "hello"}
 
     @test
     def fromMap03(): Bool \ {} =
-        let m = unsafe JMap.of("a", "hello", "b", "world");
+        let m = unsafely IO run JMap.of("a", "hello", "b", "world");
         Adaptor.fromMap(m) == Map#{"a" => "hello", "b" => "world"}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -175,19 +175,19 @@ mod TestAdaptor {
 
     @test
     def fromMapToIterator01(): Bool \ {} = region rc {
-        let m = unsafe JMap.of();
+        let m = unsafely IO run JMap.of();
         Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == (Map#{} : Map[String, String])
     }
 
     @test
     def fromMapToIterator02(): Bool \ {} = region rc {
-        let m = unsafe JMap.of("a", "hello");
+        let m = unsafely IO run JMap.of("a", "hello");
         Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == Map#{"a" => "hello"}
     }
 
     @test
     def fromMapToIterator03(): Bool \ {} = region rc {
-        let m = unsafe JMap.of("a", "hello", "b", "world");
+        let m = unsafely IO run JMap.of("a", "hello", "b", "world");
         Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == Map#{"a" => "hello", "b" => "world"}
     }
 
@@ -197,14 +197,14 @@ mod TestAdaptor {
 
     @test
     def fromIterator01(): Bool \ {} = region rc {
-        let iter = unsafe JList.of().iterator();
+        let iter = unsafely IO run JList.of().iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
         Iterator.toList(flixIter) == (Nil : List[String])
     }
 
     @test
     def fromIterator02(): Bool \ {} = region rc {
-        let iter = unsafe JList.of("hello").iterator();
+        let iter = unsafely IO run JList.of("hello").iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
         Iterator.toList(flixIter) == List#{"hello"}
     }
@@ -212,7 +212,7 @@ mod TestAdaptor {
 
     @test
     def fromIterator03(): Bool \ {} = region rc {
-        let iter = unsafe JList.of("hello", "world").iterator();
+        let iter = unsafely IO run JList.of("hello", "world").iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
         Iterator.toList(flixIter) == List#{"hello", "world"}
     }
@@ -223,13 +223,13 @@ mod TestAdaptor {
 
     @test
     def fromStreamToIterator01(): Bool \ {} = region rc {
-        let s = unsafe Stream.empty();
+        let s = unsafely IO run Stream.empty();
         Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == (Nil : List[String])
     }
 
     @test
     def fromStreamToIterator02(): Bool \ {} = region rc {
-        let s = unsafe Stream.of("hello");
+        let s = unsafely IO run Stream.of("hello");
         Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == "hello" :: Nil
     }
 
@@ -247,19 +247,19 @@ mod TestAdaptor {
 
     @test
     def fromCollectionToIterator01(): Bool \ {} = region rc {
-        let col = checked_cast (unsafe JList.of());
+        let col = checked_cast (unsafely IO run JList.of());
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == (Nil : List[String])
     }
 
     @test
     def fromCollectionToIterator02(): Bool \ {} = region rc {
-        let col = checked_cast (unsafe JList.of("hello"));
+        let col = checked_cast (unsafely IO run JList.of("hello"));
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: Nil
     }
 
     @test
     def fromCollectionToIterator03(): Bool \ {} = region rc {
-        let col = checked_cast (unsafe JList.of("hello", "world"));
+        let col = checked_cast (unsafely IO run JList.of("hello", "world"));
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: "world" :: Nil
     }
 

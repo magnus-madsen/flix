@@ -1204,16 +1204,16 @@ mod TestInt64 {
     @test
     def valueOf01(): Bool =
         let i = Int64.valueOf(0i64);
-        unsafe i.equals(Int64.valueOf(0i64))
+        unsafely IO run i.equals(Int64.valueOf(0i64))
 
     @test
     def valueOf02(): Bool =
         let i = Int64.valueOf(1i64);
-        unsafe i.equals(Int64.valueOf(1i64))
+        unsafely IO run i.equals(Int64.valueOf(1i64))
 
     @test
     def valueOf03(): Bool =
         let i = Int64.valueOf(-1i64);
-        unsafe i.equals(Int64.valueOf(-1i64))
+        unsafely IO run i.equals(Int64.valueOf(-1i64))
 
 }

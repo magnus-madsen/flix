@@ -1107,16 +1107,16 @@ mod TestInt8 {
     @test
     def valueOf01(): Bool =
         let i = Int8.valueOf(0i8);
-        unsafe i.equals(Int8.valueOf(0i8))
+        unsafely IO run i.equals(Int8.valueOf(0i8))
 
     @test
     def valueOf02(): Bool =
         let i = Int8.valueOf(1i8);
-        unsafe i.equals(Int8.valueOf(1i8))
+        unsafely IO run i.equals(Int8.valueOf(1i8))
 
     @test
     def valueOf03(): Bool =
         let i = Int8.valueOf(-1i8);
-        unsafe i.equals(Int8.valueOf(-1i8))
+        unsafely IO run i.equals(Int8.valueOf(-1i8))
 
 }

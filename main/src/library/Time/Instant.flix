@@ -45,7 +45,7 @@ mod Time {
         pub def before(x: Time.Instant, y: Time.Instant): Bool =
             let Time.Instant.Instant(t1) = x;
             let Time.Instant.Instant(t2) = y;
-            unsafe t1.isBefore(t2)
+            unsafely IO run t1.isBefore(t2)
 
         ///
         /// Returns `true` if `x` is after `y`.
@@ -54,7 +54,7 @@ mod Time {
         pub def after(x: Time.Instant, y: Time.Instant): Bool =
             let Time.Instant.Instant(t1) = x;
             let Time.Instant.Instant(t2) = y;
-            unsafe t1.isAfter(t2)
+            unsafely IO run t1.isAfter(t2)
 
         ///
         /// Returns the given instant `x` plus `d` number of nano seconds.
@@ -62,7 +62,7 @@ mod Time {
         @Experimental
         pub def plus(x: Time.Instant, d: Int64): Time.Instant =
             let Time.Instant.Instant(t) = x;
-            Time.Instant.Instant(unsafe t.plusNanos(d))
+            Time.Instant.Instant(unsafely IO run t.plusNanos(d))
 
         ///
         /// Returns the given instant `x` minus `d` number of nano seconds.
@@ -70,7 +70,7 @@ mod Time {
         @Experimental
         pub def minus(x: Time.Instant, d: Int64): Time.Instant =
             let Time.Instant.Instant(t) = x;
-            Time.Instant.Instant(unsafe t.minusNanos(d))
+            Time.Instant.Instant(unsafely IO run t.minusNanos(d))
 
         ///
         /// Returns `x` as a string using the ISO-8601 representation.
@@ -78,7 +78,7 @@ mod Time {
         @Experimental
         pub def toString(x: Time.Instant): String =
             let Time.Instant.Instant(t) = x;
-            unsafe t.toString()
+            unsafely IO run t.toString()
 
     }
 

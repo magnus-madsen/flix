@@ -44,31 +44,31 @@ instance ToString[Bool] {
 }
 
 instance ToString[Char] {
-    pub def toString(x: Char): String = unsafe Character.toString(x)
+    pub def toString(x: Char): String = unsafely IO run Character.toString(x)
 }
 
 instance ToString[Float32] {
-    pub def toString(x: Float32): String = unsafe Float.toString(x)
+    pub def toString(x: Float32): String = unsafely IO run Float.toString(x)
 }
 
 instance ToString[Float64] {
-    pub def toString(x: Float64): String = unsafe Double.toString(x)
+    pub def toString(x: Float64): String = unsafely IO run Double.toString(x)
 }
 
 instance ToString[Int8] {
-    pub def toString(x: Int8): String = unsafe Byte.toString(x)
+    pub def toString(x: Int8): String = unsafely IO run Byte.toString(x)
 }
 
 instance ToString[Int16] {
-    pub def toString(x: Int16): String = unsafe Short.toString(x)
+    pub def toString(x: Int16): String = unsafely IO run Short.toString(x)
 }
 
 instance ToString[Int32] {
-    pub def toString(x: Int32): String = unsafe Integer.toString(x)
+    pub def toString(x: Int32): String = unsafely IO run Integer.toString(x)
 }
 
 instance ToString[Int64] {
-    pub def toString(x: Int64): String = unsafe Long.toString(x)
+    pub def toString(x: Int64): String = unsafely IO run Long.toString(x)
 }
 
 instance ToString[String] {
@@ -76,15 +76,15 @@ instance ToString[String] {
 }
 
 instance ToString[BigInt] {
-    pub def toString(x: BigInt): String = unsafe x.toString()
+    pub def toString(x: BigInt): String = unsafely IO run x.toString()
 }
 
 instance ToString[BigDecimal] {
-    pub def toString(x: BigDecimal): String = unsafe x.toString()
+    pub def toString(x: BigDecimal): String = unsafely IO run x.toString()
 }
 
 instance ToString[Regex] {
-    pub def toString(x: Regex): String = unsafe x.toString()
+    pub def toString(x: Regex): String = unsafely IO run x.toString()
 }
 
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {

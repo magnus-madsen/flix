@@ -744,16 +744,16 @@ mod TestFloat32 {
     @test
     def valueOf01(): Bool =
         let d = Float32.valueOf(0.0f32);
-        unsafe d.equals(Float32.valueOf(0.0f32))
+        unsafely IO run d.equals(Float32.valueOf(0.0f32))
 
     @test
     def valueOf02(): Bool =
         let d = Float32.valueOf(1.0f32);
-        unsafe d.equals(Float32.valueOf(1.0f32))
+        unsafely IO run d.equals(Float32.valueOf(1.0f32))
 
     @test
     def valueOf03(): Bool =
         let d = Float32.valueOf(-1.0f32);
-        unsafe d.equals(Float32.valueOf(-1.0f32))
+        unsafely IO run d.equals(Float32.valueOf(-1.0f32))
 
 }

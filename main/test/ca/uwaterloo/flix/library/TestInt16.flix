@@ -1150,16 +1150,16 @@ mod TestInt16 {
     @test
     def valueOf01(): Bool =
         let i = Int16.valueOf(0i16);
-        unsafe i.equals(Int16.valueOf(0i16))
+        unsafely IO run i.equals(Int16.valueOf(0i16))
 
     @test
     def valueOf02(): Bool =
         let i = Int16.valueOf(1i16);
-        unsafe i.equals(Int16.valueOf(1i16))
+        unsafely IO run i.equals(Int16.valueOf(1i16))
 
     @test
     def valueOf03(): Bool =
         let i = Int16.valueOf(-1i16);
-        unsafe i.equals(Int16.valueOf(-1i16))
+        unsafely IO run i.equals(Int16.valueOf(-1i16))
 
 }

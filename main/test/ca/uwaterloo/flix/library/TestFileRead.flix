@@ -63,12 +63,12 @@ mod TestFileRead {
         try {
             Result.flatMap(root ->  {
                 let arr = List.toArray(rc, fileName :: Nil);
-                let path = unsafe Path.of(root, arr).normalize().toString();
+                let path = unsafely IO run Path.of(root, arr).normalize().toString();
                 Ok(path)
             }, tempdir)
         } catch {
             case ex: IOException =>
-                unsafe Err(IoError(ErrorKind.Other, ex.getMessage()))
+                unsafely IO run Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
     }
 

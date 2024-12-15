@@ -341,7 +341,7 @@ mod Int32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int32] = try {
-        Some(unsafe Integer.parseInt(s.strip()))
+        Some(unsafely IO run Integer.parseInt(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -353,7 +353,7 @@ mod Int32 {
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int32] =
         try {
-            Ok(unsafe Integer.parseInt(s.strip(), radix))
+            Ok(unsafely IO run Integer.parseInt(s.strip(), radix))
         } catch {
             case _: NumberFormatException => Err("Int32.parse")
         }
@@ -370,7 +370,7 @@ mod Int32 {
        if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
-            Some(unsafe Integer.valueOf(x).byteValue())
+            Some(unsafely IO run Integer.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -384,7 +384,7 @@ mod Int32 {
         if (x < Int16.toInt32(Int16.minValue()) or x > Int16.toInt32(Int16.maxValue()))
             None
         else
-            Some(unsafe Integer.valueOf(x).shortValue())
+            Some(unsafely IO run Integer.valueOf(x).shortValue())
 
     ///
     /// Convert `x` to a Int64.
@@ -392,7 +392,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int32): Int64 =
-        unsafe Integer.valueOf(x).longValue()
+        unsafely IO run Integer.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -400,7 +400,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int32): BigInt =
-        unsafe BigInteger.valueOf(Integer.valueOf(x).longValue())
+        unsafely IO run BigInteger.valueOf(Integer.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an Float32.
@@ -408,7 +408,7 @@ mod Int32 {
     /// The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int32): Float32 =
-        unsafe Integer.valueOf(x).floatValue()
+        unsafely IO run Integer.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -416,7 +416,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int32): Float64 =
-        unsafe Integer.valueOf(x).doubleValue()
+        unsafely IO run Integer.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -424,7 +424,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int32): BigDecimal =
-        unsafe new BigDecimal(x)
+        unsafely IO run new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -446,7 +446,7 @@ mod Int32 {
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int32): Int8 =
         let mini32 = Int8.toInt32(min#min);
         let maxi32 = Int8.toInt32(max#max);
-        unsafe Integer.valueOf(clamp(min = mini32, max = maxi32, x)).byteValue()
+        unsafely IO run Integer.valueOf(clamp(min = mini32, max = maxi32, x)).byteValue()
 
 
     ///
@@ -457,7 +457,7 @@ mod Int32 {
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int32): Int16 =
         let mini32 = Int16.toInt32(min#min);
         let maxi32 = Int16.toInt32(max#max);
-        unsafe Integer.valueOf(clamp(min = mini32, max = maxi32, x)).shortValue()
+        unsafely IO run Integer.valueOf(clamp(min = mini32, max = maxi32, x)).shortValue()
 
     ///
     /// Get the primitive Int32 value from its object representation (i.e. Integer).
@@ -466,7 +466,7 @@ mod Int32 {
     /// code you should not need to use `Integer`.
     ///
     pub def intValue(i: Integer): Int32 =
-        unsafe i.intValue()
+        unsafely IO run i.intValue()
 
     ///
     /// Convert an Int32 value to its object representation (i.e. Integer).
@@ -475,6 +475,6 @@ mod Int32 {
     /// code you should not need to use `Integer`.
     ///
     pub def valueOf(i: Int32): Integer =
-        unsafe Integer.valueOf(i)
+        unsafely IO run Integer.valueOf(i)
 
 }

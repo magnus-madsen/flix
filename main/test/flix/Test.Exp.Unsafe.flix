@@ -15,7 +15,7 @@ mod Test.Exp.Unsafe {
     def test04(): Bool = unsafely OutOfBounds run Vector#{1, 2, 3}[1] == 2
 
     def unsafeCompose(f: a -> b \ ef1, g: b -> c \ ef2): a -> c \ ef2 =
-        x -> g(unsafely ef1 run f(x)) // note that `unsafe .. (g(f(x))` would give ef2 - ef1
+        x -> g(unsafely ef1 run f(x)) // note that `unsafely ef1 run (g(f(x))` would give ef2 - ef1
 
     @Test
     def test05(): Bool = {

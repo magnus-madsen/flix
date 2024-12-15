@@ -39,7 +39,7 @@ instance Div[BigDecimal] {
         if (y == 0ff)
             0ff
         else
-            unsafe x.divide(y)
+            unsafely IO run x.divide(y)
 }
 
 instance Div[Int8] {
@@ -79,11 +79,11 @@ instance Div[BigInt] {
         if (y == 0ii)
             0ii
         else
-            unsafe x.divide(y)
+            unsafely IO run x.divide(y)
 }
 
 instance Div[String] {
     pub def div(x: String, y: String): String =
-        let s = unsafe File.separator;
+        let s = unsafely IO run File.separator;
         x + s + y
 }

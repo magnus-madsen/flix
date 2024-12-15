@@ -56,7 +56,7 @@ instance PartialOrder[Int64] {
 
 instance PartialOrder[BigInt] {
     pub def lessEqual(x: BigInt, y: BigInt): Bool =
-        unsafe (x.compareTo(y)) <= 0
+        unsafely IO run (x.compareTo(y)) <= 0
 }
 
 instance PartialOrder[(a1, a2)] with PartialOrder[a1], PartialOrder[a2] {

@@ -32,7 +32,7 @@ mod Object {
             case _: Int32 => false
             case _: Int64 => false
             case _: _ =>
-                unsafe Objects.isNull(unchecked_cast(x as Object))
+                unsafely IO run Objects.isNull(unchecked_cast(x as Object))
         }
 
     ///

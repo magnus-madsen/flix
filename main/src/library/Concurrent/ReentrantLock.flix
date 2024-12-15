@@ -48,7 +48,7 @@ mod Concurrent {
         @Internal
         pub def isFair(lock: ReentrantLock): Bool \ {} =
             let ReentrantLock(l) = lock;
-            unsafe l.isFair()
+            unsafely IO run l.isFair()
 
         ///
         /// Acquires the lock.

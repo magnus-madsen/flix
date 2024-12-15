@@ -46,43 +46,43 @@ instance Hash[Bool] {
 }
 
 instance Hash[Char] {
-    pub def hash(x: Char): Int32 = unsafe Character.hashCode(x)
+    pub def hash(x: Char): Int32 = unsafely IO run Character.hashCode(x)
 }
 
 instance Hash[Float32] {
-    pub def hash(x: Float32): Int32 = unsafe Float.hashCode(x)
+    pub def hash(x: Float32): Int32 = unsafely IO run Float.hashCode(x)
 }
 
 instance Hash[Float64] {
-    pub def hash(x: Float64): Int32 = unsafe Double.hashCode(x)
+    pub def hash(x: Float64): Int32 = unsafely IO run Double.hashCode(x)
 }
 
 instance Hash[BigDecimal] {
-    pub def hash(x: BigDecimal): Int32 = unsafe x.hashCode()
+    pub def hash(x: BigDecimal): Int32 = unsafely IO run x.hashCode()
 }
 
 instance Hash[Int8] {
-    pub def hash(x: Int8): Int32 = unsafe Byte.hashCode(x)
+    pub def hash(x: Int8): Int32 = unsafely IO run Byte.hashCode(x)
 }
 
 instance Hash[Int16] {
-    pub def hash(x: Int16): Int32 = unsafe Short.hashCode(x)
+    pub def hash(x: Int16): Int32 = unsafely IO run Short.hashCode(x)
 }
 
 instance Hash[Int32] {
-    pub def hash(x: Int32): Int32 = unsafe Integer.hashCode(x)
+    pub def hash(x: Int32): Int32 = unsafely IO run Integer.hashCode(x)
 }
 
 instance Hash[Int64] {
-    pub def hash(x: Int64): Int32 = unsafe Long.hashCode(x)
+    pub def hash(x: Int64): Int32 = unsafely IO run Long.hashCode(x)
 }
 
 instance Hash[String] {
-    pub def hash(x: String): Int32 = unsafe x.hashCode()
+    pub def hash(x: String): Int32 = unsafely IO run x.hashCode()
 }
 
 instance Hash[BigInt] {
-    pub def hash(x: BigInt): Int32 = unsafe x.hashCode()
+    pub def hash(x: BigInt): Int32 = unsafely IO run x.hashCode()
 }
 
 instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {

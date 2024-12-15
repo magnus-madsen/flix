@@ -437,7 +437,7 @@ mod Result {
         try {
             Ok(f())
         } catch {
-            case e: Exception => Err(unsafe e.getMessage())
+            case e: Exception => Err(unsafely IO run e.getMessage())
         }
 
 }

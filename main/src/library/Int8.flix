@@ -337,7 +337,7 @@ mod Int8 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int8] = try {
-        Some(unsafe Byte.parseByte(s.strip()))
+        Some(unsafely IO run Byte.parseByte(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -348,7 +348,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt16(x: Int8): Int16 =
-        unsafe Byte.valueOf(x).shortValue()
+        unsafely IO run Byte.valueOf(x).shortValue()
 
     ///
     /// Convert `x` to an Int32.
@@ -356,7 +356,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int8): Int32 =
-        unsafe Byte.valueOf(x).intValue()
+        unsafely IO run Byte.valueOf(x).intValue()
 
     ///
     /// Convert `x` to an Int64.
@@ -364,7 +364,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int8): Int64 =
-        unsafe Byte.valueOf(x).longValue()
+        unsafely IO run Byte.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -372,7 +372,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int8): BigInt =
-        unsafe BigInteger.valueOf(Byte.valueOf(x).longValue())
+        unsafely IO run BigInteger.valueOf(Byte.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -380,7 +380,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int8): Float32 =
-        unsafe Byte.valueOf(x).floatValue()
+        unsafely IO run Byte.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -388,7 +388,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int8): Float64 =
-        unsafe Byte.valueOf(x).doubleValue()
+        unsafely IO run Byte.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -396,7 +396,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int8): BigDecimal =
-        unsafe new BigDecimal(Int8.toInt32(x))
+        unsafely IO run new BigDecimal(Int8.toInt32(x))
 
     ///
     /// Get the primitive Int8 value from its object representation (i.e. Byte).
@@ -405,7 +405,7 @@ mod Int8 {
     /// code you should not need to use `Byte`.
     ///
     pub def byteValue(i: Byte): Int8 =
-        unsafe i.byteValue()
+        unsafely IO run i.byteValue()
 
     ///
     /// Convert an Int8 value to its object representation (i.e. Byte).
@@ -414,6 +414,6 @@ mod Int8 {
     /// code you should not need to use `Byte`.
     ///
     pub def valueOf(i: Int8): Byte =
-        unsafe Byte.valueOf(i)
+        unsafely IO run Byte.valueOf(i)
 
 }

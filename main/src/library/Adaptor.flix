@@ -54,8 +54,8 @@ mod Adaptor {
     /// Returns the given Java Optional as a Flix Option.
     ///
     pub def fromOptional(_: Proxy[a], o: Optional): Option[a] =
-        if (unsafe o.isPresent()) {
-            let o1 = unsafe o.get();
+        if (unsafely IO run o.isPresent()) {
+            let o1 = unsafely IO run o.get();
             Some(unchecked_cast(o1 as a))
         } else
             None
@@ -64,8 +64,8 @@ mod Adaptor {
     /// Returns the given Java `Map.Entry` as a Flix tuple.
     ///
     pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: Entry): (k, v) =
-        let k1 = unsafe e.getKey();
-        let v1 = unsafe e.getValue();
+        let k1 = unsafely IO run e.getKey();
+        let v1 = unsafely IO run e.getValue();
         (unchecked_cast(k1 as k), unchecked_cast(v1 as v))
 
 

@@ -47,19 +47,19 @@ mod Test.Exp.Instanceof {
 
     @test
     def testInstanceof07(): Bool =
-        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof StandardOpenOption
+        unsafely IO run StandardOpenOption.DELETE_ON_CLOSE instanceof StandardOpenOption
 
     @test
     def testInstanceof08(): Bool =
-        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof OpenOption
+        unsafely IO run StandardOpenOption.DELETE_ON_CLOSE instanceof OpenOption
 
     @test
     def testInstanceof09(): Bool =
-        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof Enum
+        unsafely IO run StandardOpenOption.DELETE_ON_CLOSE instanceof Enum
 
     @test
     def testInstanceof10(): Bool =
-        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof Object
+        unsafely IO run StandardOpenOption.DELETE_ON_CLOSE instanceof Object
 
     @test
     def testInstanceof11(): Bool = (100ii instanceof Long) == false

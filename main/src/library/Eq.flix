@@ -78,10 +78,10 @@ instance Eq[Float64] {
 
 instance Eq[BigDecimal] {
     pub def eq(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) == 0
+        (unsafely IO run x.compareTo(y)) == 0
 
     redef neq(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) != 0
+        (unsafely IO run x.compareTo(y)) != 0
 }
 
 instance Eq[Int8] {
@@ -106,14 +106,14 @@ instance Eq[Int64] {
 
 instance Eq[BigInt] {
     pub def eq(x: BigInt, y: BigInt): Bool =
-        (unsafe x.compareTo(y)) == 0
+        (unsafely IO run x.compareTo(y)) == 0
 
     redef neq(x: BigInt, y: BigInt): Bool =
-        (unsafe x.compareTo(y)) != 0
+        (unsafely IO run x.compareTo(y)) != 0
 }
 
 instance Eq[String] {
-    pub def eq(x: String, y: String): Bool = unsafe x.equals(y)
+    pub def eq(x: String, y: String): Bool = unsafely IO run x.equals(y)
 }
 
 instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {

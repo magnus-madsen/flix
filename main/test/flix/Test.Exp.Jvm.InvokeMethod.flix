@@ -25,7 +25,7 @@ mod Test.Exp.Jvm.InvokeMethod {
 
     @test
     def testInvokePureMethod01(): Bool =
-        unsafe "HELLO WORLD".toLowerCase() == "hello world"
+        unsafely IO run "HELLO WORLD".toLowerCase() == "hello world"
 
     @test
     def testInvokeObjectMethod01(): JString \ IO =

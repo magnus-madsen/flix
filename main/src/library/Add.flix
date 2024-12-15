@@ -33,7 +33,7 @@ instance Add[Float64] {
 }
 
 instance Add[BigDecimal] {
-    pub def add(x: BigDecimal, y: BigDecimal): BigDecimal = unsafe x.add(y)
+    pub def add(x: BigDecimal, y: BigDecimal): BigDecimal = unsafely IO run x.add(y)
 }
 
 instance Add[Int8] {
@@ -53,9 +53,9 @@ instance Add[Int64] {
 }
 
 instance Add[BigInt] {
-    pub def add(x: BigInt, y: BigInt): BigInt = unsafe x.add(y)
+    pub def add(x: BigInt, y: BigInt): BigInt = unsafely IO run x.add(y)
 }
 
 instance Add[String] {
-    pub def add(x: String, y: String): String = unsafe x.concat(y)
+    pub def add(x: String, y: String): String = unsafely IO run x.concat(y)
 }

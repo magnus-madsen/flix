@@ -336,7 +336,7 @@ mod Int16 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int16] = try {
-        Some(unsafe Short.parseShort(s.strip()))
+        Some(unsafely IO run Short.parseShort(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -353,7 +353,7 @@ mod Int16 {
         if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
-            Some(unsafe Short.valueOf(x).byteValue())
+            Some(unsafely IO run Short.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to a Int32.
@@ -361,7 +361,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int16): Int32 =
-        unsafe Short.valueOf(x).intValue()
+        unsafely IO run Short.valueOf(x).intValue()
 
     ///
     /// Convert `x` to a Int64.
@@ -369,7 +369,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int16): Int64 =
-        unsafe Short.valueOf(x).longValue()
+        unsafely IO run Short.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -377,7 +377,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int16): BigInt =
-        unsafe BigInteger.valueOf(Short.valueOf(x).longValue())
+        unsafely IO run BigInteger.valueOf(Short.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -385,7 +385,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int16): Float32 =
-        unsafe Short.valueOf(x).floatValue()
+        unsafely IO run Short.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -393,7 +393,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int16): Float64 =
-        unsafe Short.valueOf(x).doubleValue()
+        unsafely IO run Short.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -401,7 +401,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int16): BigDecimal =
-        unsafe new BigDecimal(Int16.toInt32(x))
+        unsafely IO run new BigDecimal(Int16.toInt32(x))
 
     ///
     /// Helper function for the `clamp` conversion function.
@@ -423,7 +423,7 @@ mod Int16 {
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int16): Int8 =
         let mini16 = Int8.toInt16(min#min);
         let maxi16 = Int8.toInt16(max#max);
-        unsafe Short.valueOf(clamp(min = mini16, max = maxi16, x)).byteValue()
+        unsafely IO run Short.valueOf(clamp(min = mini16, max = maxi16, x)).byteValue()
 
     ///
     /// Get the primitive Int16 value from its object representation (i.e. Short).
@@ -432,7 +432,7 @@ mod Int16 {
     /// code you should not need to use `Short`.
     ///
     pub def shortValue(i: Short): Int16 =
-        unsafe i.shortValue()
+        unsafely IO run i.shortValue()
 
     ///
     /// Convert an Int16 value to its object representation (i.e. Short).
@@ -441,6 +441,6 @@ mod Int16 {
     /// code you should not need to use `Short`.
     ///
     pub def valueOf(i: Int16): Short =
-        unsafe Short.valueOf(i)
+        unsafely IO run Short.valueOf(i)
 
 }
