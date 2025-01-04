@@ -20,10 +20,12 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
+sealed trait PatMatchError extends CompilationMessage
+
 /**
   * An error raised to indicate a non-exhaustive pattern match expression.
   */
-case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage {
+case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends PatMatchError {
   val kind = "Pattern Match"
 
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
@@ -45,5 +47,25 @@ case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends Com
        |
        |""".stripMargin
   })
+
+}
+
+/**
+  * An error raised to indicate a non-exhaustive pattern match expression.
+  */
+case class UselessPatternError(loc: SourceLocation) extends PatMatchError {
+  val kind = "Pattern Match"
+
+  def summary: String = s"Useless pattern."
+
+  def message(formatter: Formatter): String = {
+    import formatter.*
+    s""">> Useless pattern. This case is unreachable.
+       |
+       |${code(loc, "unreachable case.")}
+       |""".stripMargin
+  }
+
+  override def explain(formatter: Formatter): Option[String] = None // MATT say to remove it or something
 
 }
