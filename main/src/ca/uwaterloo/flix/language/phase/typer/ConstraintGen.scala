@@ -771,7 +771,7 @@ object ConstraintGen {
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
-        val op = lookupOp(opUse.sym, opUse.loc)
+        val op = lookupOp(opUse.sym, opUse.qname.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)
 
         // length check done in Resolver

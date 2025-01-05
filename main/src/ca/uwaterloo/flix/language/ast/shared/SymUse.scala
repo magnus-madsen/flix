@@ -55,8 +55,15 @@ object SymUse {
 
   /**
     * Represents a use of an effect operation sym.
+    *
+    * For an occurrence of the form `Xxx.Yyy.zzz`, `sym` is the [[Symbol]] of the accessed element `zzz`
+    * and `qname` represents the qualified name `Xxx.Yyy.zzz` in its entirety, where [[QName.namespace]]
+    * contains an [[Ident]] for `Xxx` and `Yyy` and [[QName.ident]] contains a [[Ident]] for `zzz`.
+    *
+    * @param sym    The [[Symbol]] being used.
+    * @param qname  The qualified name ([[QName]]) of the use of `sym`:
     */
-  case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
+  case class OpSymUse(sym: Symbol.OpSym, qname: QName)
 
   /**
     * Represents a use of a restrictable enum case sym.

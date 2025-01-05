@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016, 2022 Ming-Ho Yee, Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +126,7 @@ object ClosureConv {
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
           val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
-          val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
+          val clo = mkLambdaClosure(fparams, body, cloType, opUse.qname.loc)
           HandlerRule(opUse, fparams, clo)
       }
       Expr.TryWith(e, effUse, rs, tpe, purity, loc)

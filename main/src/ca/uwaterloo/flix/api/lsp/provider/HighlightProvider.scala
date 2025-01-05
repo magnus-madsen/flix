@@ -207,7 +207,7 @@ object HighlightProvider {
     case SymUse.DefSymUse(_, loc) => loc.isReal
     case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
-    case SymUse.OpSymUse(_, loc) => loc.isReal
+    case SymUse.OpSymUse(_, qname) => qname.loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
     case SymUse.SigSymUse(_, loc) => loc.isReal
@@ -448,7 +448,7 @@ object HighlightProvider {
 
     object OpSymConsumer extends Consumer {
       override def consumeOp(op: TypedAst.Op): Unit = considerWrite(op.sym, op.sym.loc)
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = considerRead(sym.sym, sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = considerRead(sym.sym, sym.qname.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, acceptor)

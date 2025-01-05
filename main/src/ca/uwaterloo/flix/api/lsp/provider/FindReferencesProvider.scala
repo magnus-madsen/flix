@@ -169,7 +169,7 @@ object FindReferencesProvider {
     case SymUse.DefSymUse(_, loc) => loc.isReal
     case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
-    case SymUse.OpSymUse(_, loc) => loc.isReal
+    case SymUse.OpSymUse(_, qname) => qname.loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableEnumSymUse(_, loc) => loc.isReal
     case SymUse.SigSymUse(_, loc) => loc.isReal
@@ -342,7 +342,7 @@ object FindReferencesProvider {
     }
 
     object OpSymConsumer extends Consumer {
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.qname.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, AllAcceptor)

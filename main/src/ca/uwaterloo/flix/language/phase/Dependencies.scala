@@ -48,7 +48,7 @@ object Dependencies {
       }
 
       override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = {
-        addDependency(symUse.sym.loc, symUse.loc)
+        addDependency(symUse.sym.loc, symUse.qname.loc)
       }
 
       override def consumeSigSymUse(symUse: SymUse.SigSymUse): Unit = {

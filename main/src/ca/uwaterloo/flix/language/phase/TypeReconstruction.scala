@@ -427,7 +427,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>
       val es = exps.map(visitExp(_))
       val tpe = subst(tvar)
-      val eff1 = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.loc.asSynthetic)
+      val eff1 = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.qname.loc.asSynthetic)
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
