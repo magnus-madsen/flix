@@ -37,7 +37,7 @@ object ConstraintSolver2 {
     * This class provides several methods for manipulating the constraints.
     */
   // Invariant: the constraints always have the tree applied
-  class Soup private(private val constrs: List[TypeConstraint2], private val tree: SubstitutionTree) {
+  final class Soup private(private val constrs: List[TypeConstraint2], private val tree: SubstitutionTree) {
 
     /**
       * Transforms the constraint set by applying a one-to-many constraint function.
@@ -61,6 +61,12 @@ object ConstraintSolver2 {
       */
     def flatMapSubst(f: TypeConstraint2 => (List[TypeConstraint2], SubstitutionTree)): Soup = {
       val (newConstrs, moreTree) = foldSubstitution(constrs)(f)
+      new Soup(newConstrs, moreTree @@ tree)
+    }
+
+    // MATT docs
+    def blockApply(f: List[TypeConstraint2] => (List[TypeConstraint2], SubstitutionTree)): Soup = {
+      val (newConstrs, moreTree) = f(constrs)
       new Soup(newConstrs, moreTree @@ tree)
     }
 
@@ -108,9 +114,23 @@ object ConstraintSolver2 {
     }
 
     def tap(f: List[TypeConstraint2] => Unit): Soup = {
-      f(constrs)
+//      f(constrs)
       this
     }
+
+    // MATT docs here and inline
+    @tailrec
+    def exhaustively(progress: Progress)(f: (Soup, Progress) => Soup): Soup = {
+      val innerProgress = Progress()
+      val res = f(this, innerProgress)
+      if (innerProgress.query()) {
+        progress.markProgress()
+        res.exhaustively(progress)(f)
+      } else {
+        res
+      }
+    }
+
   }
 
   object Soup {
@@ -185,7 +205,9 @@ object ConstraintSolver2 {
       .tap(_ => println("Original"))
       .tap(cs => println(cs.length))
 
-      .flatMap(breakDownConstraints(_, progress))
+      .exhaustively(progress) {
+        (s, p) => s.flatMap(breakDownConstraints(_, p))
+      }
       .tap(_ => println("after breakDownConstraints"))
       .tap(cs => println(cs.length))
 
@@ -204,7 +226,12 @@ object ConstraintSolver2 {
       .flatMapSubst(makeSubstitution(_, progress))
       .tap(_ => println("after makeSubstitution"))
       .tap(cs => println(cs.length))
-      .tap(cs => cs.foreach(println))
+      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+
+      .map(reduceTypes(_, progress))
+      .tap(_ => println("after reduceTypes"))
+      .tap(cs => println(cs.length))
+      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
       .flatMapSubst(effectUnification(_, progress))
       .tap(_ => println("after effectUnification"))
@@ -408,6 +435,18 @@ object ConstraintSolver2 {
       (cs, tree)
 
     case c => (List(c), SubstitutionTree.empty)
+  }
+
+  private def blockEffectUnification(constrs: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
+    // MATT
+    // get eff constraints
+    // process those with EffUnification3
+    // get purification constraints
+    // process those with EffUnification3
+    // concatenate new constraints with non-eff constraints
+    // apply result subst to all constraints
+    // return
+    ???
   }
 
   /**
