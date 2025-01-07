@@ -142,6 +142,8 @@ object Debug {
       Some(future.get(limitMs, TimeUnit.MILLISECONDS))
     } catch {
       case _: TimeoutException => None
+    } finally {
+      executor.shutdown()
     }
   }
 
