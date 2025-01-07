@@ -147,8 +147,8 @@ object ConstraintSolver2 {
     var subst = SubstitutionTree.empty
     var progressMade = true
     while (progressMade) {
-      implicit val progress: Progress = Progress()
-      val (newConstrs, newSubst) = solveOne(constrs)
+      val progress = Progress()
+      val (newConstrs, newSubst) = solveOne(constrs, progress)
       // invariant: the new subst is already applied to all the newConstrs
       constrs = newConstrs
       subst = newSubst @@ subst
@@ -167,8 +167,8 @@ object ConstraintSolver2 {
     var subst = Substitution.empty
     var progressMade = true
     while (progressMade) {
-      implicit val progress: Progress = Progress()
-      val (newConstrs, newSubst) = solveOneTypes(constrs)
+      val progress: Progress = Progress()
+      val (newConstrs, newSubst) = solveOneTypes(constrs, progress)
       // invariant: the new subst is already applied to all the newConstrs
       constrs = newConstrs
       subst = newSubst @@ subst
@@ -180,20 +180,20 @@ object ConstraintSolver2 {
   /**
     * Iterates once over all reduction rules to apply them to the constraint set.
     */
-  private def solveOne(constrs: List[TypeConstraint2])(implicit progress: Progress, scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
+  private def solveOne(constrs: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
     Soup.of(constrs)
       .tap(_ => println("Original"))
       .tap(cs => println(cs.length))
 
-      .flatMap(breakDownConstraints)
+      .flatMap(breakDownConstraints(_, progress))
       .tap(_ => println("after breakDownConstraints"))
       .tap(cs => println(cs.length))
 
-      .flatMap(eliminateIdentities)
+      .flatMap(eliminateIdentities(_, progress))
       .tap(_ => println("after eliminateIdentities"))
       .tap(cs => println(cs.length))
 
-      .map(reduceTypes)
+      .map(reduceTypes(_, progress))
       .tap(_ => println("after reduceTypes"))
       .tap(cs => println(cs.length))
 
@@ -201,24 +201,24 @@ object ConstraintSolver2 {
       .tap(_ => println("after purifyEmptyRegion"))
       .tap(cs => println(cs.length))
 
-      .flatMapSubst(makeSubstitution)
+      .flatMapSubst(makeSubstitution(_, progress))
       .tap(_ => println("after makeSubstitution"))
       .tap(cs => println(cs.length))
       .tap(cs => cs.foreach(println))
 
-      .flatMapSubst(effectUnification)
+      .flatMapSubst(effectUnification(_, progress))
       .tap(_ => println("after effectUnification"))
       .tap(cs => println(cs.length))
 
-      .flatMapSubst(recordUnification)
+      .flatMapSubst(recordUnification(_, progress))
       .tap(_ => println("after recordUnification"))
       .tap(cs => println(cs.length))
 
-      .flatMapSubst(schemaUnification)
+      .flatMapSubst(schemaUnification(_, progress))
       .tap(_ => println("after schemaUnification"))
       .tap(cs => println(cs.length))
 
-      .flatMap(contextReduction)
+      .flatMap(contextReduction(_, progress))
       .tap(_ => println("after contextReduction"))
       .tap(cs => println(cs.length))
 
@@ -230,16 +230,16 @@ object ConstraintSolver2 {
     *
     * Only applies rules relevant to equality constraints.
     */
-  private def solveOneTypes(constrs: List[TypeConstraint2])(implicit progress: Progress, scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], Substitution) = {
+  private def solveOneTypes(constrs: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], Substitution) = {
     Soup.of(constrs)
-      .flatMap(breakDownConstraints)
-      .flatMap(eliminateIdentities)
+      .flatMap(breakDownConstraints(_, progress))
+      .flatMap(eliminateIdentities(_, progress))
       .sort()
-      .map(reduceTypes)
-      .flatMapSubst(effectUnification)
-      .flatMapSubst(makeSubstitution)
-      .flatMapSubst(recordUnification)
-      .flatMapSubst(schemaUnification)
+      .map(reduceTypes(_, progress))
+      .flatMapSubst(effectUnification(_, progress))
+      .flatMapSubst(makeSubstitution(_, progress))
+      .flatMapSubst(recordUnification(_, progress))
+      .flatMapSubst(schemaUnification(_, progress))
       .getShallow
   }
 
@@ -283,13 +283,13 @@ object ConstraintSolver2 {
     * }}}
     */
   // (appU)
-  private def breakDownConstraints(constr: TypeConstraint2)(implicit progress: Progress): List[TypeConstraint2] = constr match {
+  private def breakDownConstraints(constr: TypeConstraint2, progress: Progress): List[TypeConstraint2] = constr match {
     case TypeConstraint2.Equality(t1@Type.Apply(tpe11, tpe12, _), t2@Type.Apply(tpe21, tpe22, _), loc) if isSyntactic(t1.kind) && isSyntactic(t2.kind) =>
       progress.markProgress()
       List(TypeConstraint2.Equality(tpe11, tpe21, loc), TypeConstraint2.Equality(tpe12, tpe22, loc))
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
-      val nested = nested0.flatMap(breakDownConstraints)
+      val nested = nested0.flatMap(breakDownConstraints(_, progress))
       List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
 
     case c => List(c)
@@ -309,7 +309,7 @@ object ConstraintSolver2 {
     * }}}
     */
   // (reflU)
-  private def eliminateIdentities(constr: TypeConstraint2)(implicit progress: Progress): List[TypeConstraint2] = constr match {
+  private def eliminateIdentities(constr: TypeConstraint2, progress: Progress): List[TypeConstraint2] = constr match {
     case c@TypeConstraint2.Equality(tpe1, tpe2, loc) =>
       if (tpe1 == tpe2) {
         progress.markProgress()
@@ -319,7 +319,7 @@ object ConstraintSolver2 {
       }
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
-      val nested = nested0.flatMap(eliminateIdentities)
+      val nested = nested0.flatMap(eliminateIdentities(_, progress))
       List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
 
     case c: TypeConstraint2.Trait =>
@@ -349,12 +349,12 @@ object ConstraintSolver2 {
     *   instance Ord[List[a]] with Ord[a]
     * }}}
     */
-  private def contextReduction(constr: TypeConstraint2)(implicit progress: Progress, scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): List[TypeConstraint2] = constr match {
+  private def contextReduction(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): List[TypeConstraint2] = constr match {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint2.Equality => List(c)
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
-      val nested = nested0.flatMap(contextReduction(_)(progress, scope.enter(sym), renv0, trenv, eqenv, flix))
+      val nested = nested0.flatMap(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
       List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
 
     // Case 2: Trait constraint. Perform context reduction.
@@ -394,7 +394,7 @@ object ConstraintSolver2 {
   /**
     * Performs effect unification on the given type constraint.
     */
-  private def effectUnification(constr: TypeConstraint2)(implicit progress: Progress, scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
+  private def effectUnification(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case c@TypeConstraint2.Equality(tpe1, tpe2, loc) if tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff =>
       EffUnification3.unify(tpe1, tpe2, scope, renv) match {
         case Result.Ok(Some(subst)) => (Nil, SubstitutionTree(subst, Map()))
@@ -402,7 +402,7 @@ object ConstraintSolver2 {
       }
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
-      val (nested, branch) = foldSubstitution(nested0)(effectUnification(_)(progress, scope.enter(sym), renv, flix))
+      val (nested, branch) = foldSubstitution(nested0)(effectUnification(_, progress)(scope.enter(sym), renv, flix))
       val tree = SubstitutionTree.oneBranch(sym, branch)
       val cs = List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
       (cs, tree)
@@ -413,14 +413,14 @@ object ConstraintSolver2 {
   /**
     * Performs record row unification on the given type constraint.
     */
-  private def recordUnification(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
+  private def recordUnification(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case TypeConstraint2.Equality(tpe1, tpe2, loc) if tpe1.kind == Kind.RecordRow && tpe2.kind == Kind.RecordRow =>
-      RecordConstraintSolver2.solve(tpe1, tpe2, scope, renv, loc) match {
+      RecordConstraintSolver2.solve(tpe1, tpe2, scope, renv, loc)(progress, flix) match {
         case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
       }
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
-      val (nested, branch) = foldSubstitution(nested0)(recordUnification(_)(scope.enter(sym), progress, renv, eqEnv, flix))
+      val (nested, branch) = foldSubstitution(nested0)(recordUnification(_, progress)(scope.enter(sym), renv, eqEnv, flix))
       val tree = SubstitutionTree.oneBranch(sym, branch)
       val cs = List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
       (cs, tree)
@@ -431,14 +431,14 @@ object ConstraintSolver2 {
   /**
     * Performs schema row unification on the given type constraint.
     */
-  private def schemaUnification(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
+  private def schemaUnification(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case TypeConstraint2.Equality(tpe1, tpe2, loc) if tpe1.kind == Kind.SchemaRow && tpe2.kind == Kind.SchemaRow =>
-      SchemaConstraintSolver2.solve(tpe1, tpe2, scope, renv, loc) match {
+      SchemaConstraintSolver2.solve(tpe1, tpe2, scope, renv, loc)(progress, flix) match {
         case (constrs, subst) => (constrs, SubstitutionTree(subst, Map()))
       }
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
-      val (nested, branch) = foldSubstitution(nested0)(schemaUnification(_)(scope.enter(sym), progress, renv, eqEnv, flix))
+      val (nested, branch) = foldSubstitution(nested0)(schemaUnification(_, progress)(scope.enter(sym), renv, eqEnv, flix))
       val tree = SubstitutionTree.oneBranch(sym, branch)
       val cs = List(TypeConstraint2.Purification(sym, eff1, eff2, nested, loc))
       (cs, tree)
@@ -450,10 +450,10 @@ object ConstraintSolver2 {
     * Performs reduction on the types in the given type constraints.
     */
   // (redU)
-  private def reduceTypes(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): TypeConstraint2 = constr match {
-    case TypeConstraint2.Equality(tpe1, tpe2, loc) => TypeConstraint2.Equality(reduce(tpe1, scope, renv), reduce(tpe2, scope, renv), loc)
-    case TypeConstraint2.Trait(sym, tpe, loc) => TypeConstraint2.Trait(sym, reduce(tpe, scope, renv), loc)
-    case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) => TypeConstraint2.Purification(sym, reduce(eff1, scope, renv), reduce(eff2, scope, renv), nested, loc)
+  private def reduceTypes(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): TypeConstraint2 = constr match {
+    case TypeConstraint2.Equality(tpe1, tpe2, loc) => TypeConstraint2.Equality(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), loc)
+    case TypeConstraint2.Trait(sym, tpe, loc) => TypeConstraint2.Trait(sym, reduce(tpe, scope, renv)(progress, eqenv, flix), loc)
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) => TypeConstraint2.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), nested, loc)
   }
 
   /**
@@ -471,7 +471,7 @@ object ConstraintSolver2 {
     */
   // (varU)
   // TODO CONSTR-SOLVER-2 make private
-  def makeSubstitution(constr: TypeConstraint2)(implicit scope: Scope, progress: Progress, renv: RigidityEnv): (List[TypeConstraint2], SubstitutionTree) = constr match {
+  def makeSubstitution(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint2], SubstitutionTree) = constr match {
     case TypeConstraint2.Equality(Type.Var(sym, _), tpe2, loc) if !renv.isRigid(sym) && sym.kind == tpe2.kind =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
@@ -485,7 +485,7 @@ object ConstraintSolver2 {
     case c: TypeConstraint2.Trait => (List(c), SubstitutionTree.empty)
 
     case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) =>
-      val (cs, branch) = foldSubstitution(nested)(makeSubstitution(_)(scope.enter(sym), progress, renv))
+      val (cs, branch) = foldSubstitution(nested)(makeSubstitution(_, progress)(scope.enter(sym), renv))
       val c = TypeConstraint2.Purification(sym, eff1, eff2, cs, loc)
       val tree = SubstitutionTree.oneBranch(sym, branch)
       (List(c), tree)
