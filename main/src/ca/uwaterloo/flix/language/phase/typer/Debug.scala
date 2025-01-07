@@ -135,7 +135,7 @@ object Debug {
   /**
     * Executes the function `f`, timing out after `limitMs` milliseconds.
     */
-  private def runWithTimeout[A](limitMs: Int)(f: () => A): Option[A] = {
+  def runWithTimeout[A](limitMs: Int)(f: () => A): Option[A] = {
     val executor = Executors.newSingleThreadExecutor();
     val future = executor.submit(() => f())
     try {

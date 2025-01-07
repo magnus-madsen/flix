@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintGen2, ConstraintSolver, ConstraintSolver2, ConstraintSolverInterface, InfResult, InfResult2, SubstitutionTree, TypeContext, TypeContext2}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintGen2, ConstraintSolver, ConstraintSolver2, ConstraintSolverInterface, Debug, InfResult, InfResult2, SubstitutionTree, TypeContext, TypeContext2}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -194,7 +194,7 @@ object Typer {
     val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult2(infTconstrs, tpe, eff, infRenv)
-    val (subst, constraintErrors) = timeLimit { () =>
+    val (subst, constraintErrors) = Debug.runWithTimeout(1000) { () =>
       ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     } match {
       case None =>
@@ -205,17 +205,6 @@ object Typer {
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
     TypeReconstruction2.visitDef(defn, subst)
-  }
-
-  // MATT hack
-  private def timeLimit[A](f: () => A): Option[A] = {
-    val executor = Executors.newSingleThreadExecutor();
-    val future = executor.submit(() => f())
-    try {
-      Some(future.get(1, TimeUnit.SECONDS))
-    } catch {
-      case _: TimeoutException => None
-    }
   }
 
   /**
