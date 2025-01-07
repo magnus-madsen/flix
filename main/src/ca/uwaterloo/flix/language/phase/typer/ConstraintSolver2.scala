@@ -106,6 +106,11 @@ object ConstraintSolver2 {
         case _ => new Soup(constrs.sortBy(rank), tree)
       }
     }
+
+    def tap(f: List[TypeConstraint2] => Unit): Soup = {
+      f(constrs)
+      this
+    }
   }
 
   object Soup {
@@ -177,15 +182,46 @@ object ConstraintSolver2 {
     */
   private def solveOne(constrs: List[TypeConstraint2])(implicit progress: Progress, scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
     Soup.of(constrs)
+      .tap(_ => println("Original"))
+      .tap(cs => println(cs.length))
+
       .flatMap(breakDownConstraints)
+      .tap(_ => println("after breakDownConstraints"))
+      .tap(cs => println(cs.length))
+
       .flatMap(eliminateIdentities)
+      .tap(_ => println("after eliminateIdentities"))
+      .tap(cs => println(cs.length))
+
       .map(reduceTypes)
+      .tap(_ => println("after reduceTypes"))
+      .tap(cs => println(cs.length))
+
       .map(purifyEmptyRegion)
+      .tap(_ => println("after purifyEmptyRegion"))
+      .tap(cs => println(cs.length))
+
       .flatMapSubst(makeSubstitution)
+      .tap(_ => println("after makeSubstitution"))
+      .tap(cs => println(cs.length))
+      .tap(cs => cs.foreach(println))
+
       .flatMapSubst(effectUnification)
+      .tap(_ => println("after effectUnification"))
+      .tap(cs => println(cs.length))
+
       .flatMapSubst(recordUnification)
+      .tap(_ => println("after recordUnification"))
+      .tap(cs => println(cs.length))
+
       .flatMapSubst(schemaUnification)
+      .tap(_ => println("after schemaUnification"))
+      .tap(cs => println(cs.length))
+
       .flatMap(contextReduction)
+      .tap(_ => println("after contextReduction"))
+      .tap(cs => println(cs.length))
+
       .get
   }
 

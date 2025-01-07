@@ -56,7 +56,7 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
         // Use the root substitution for the external effects.
         // Use the appropriate branch substitution for the nested constraints.
         // MATT what to do if sym not in branches?
-        TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches(sym).apply), loc)
+        TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches.getOrElse(sym, SubstitutionTree.empty).apply), loc)
     }
   }
 

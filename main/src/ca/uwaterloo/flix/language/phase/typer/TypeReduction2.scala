@@ -108,7 +108,7 @@ object TypeReduction2 {
           progress.markProgress()
           PrimitiveEffects.getMethodEffs(method, loc)
 
-        case t => Type.JvmToType(t, loc)
+        case t => Type.JvmToEff(t, loc)
       }
 
     case unresolved@Type.UnresolvedJvmType(member, loc) =>
