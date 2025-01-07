@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -202,49 +203,92 @@ object ConstraintSolver2 {
     */
   private def solveOne(constrs: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
     Soup.of(constrs)
+      .tap(_ => println("==================================="))
       .tap(_ => println("Original"))
       .tap(cs => println(cs.length))
 
+      .tap(_ => println("==================================="))
       .exhaustively(progress) {
         (s, p) => s.flatMap(breakDownConstraints(_, p))
       }
       .tap(_ => println("after breakDownConstraints"))
       .tap(cs => println(cs.length))
 
+      .tap(_ => println("==================================="))
       .flatMap(eliminateIdentities(_, progress))
       .tap(_ => println("after eliminateIdentities"))
       .tap(cs => println(cs.length))
 
+      .tap(_ => println("==================================="))
       .map(reduceTypes(_, progress))
       .tap(_ => println("after reduceTypes"))
       .tap(cs => println(cs.length))
 
+      .tap(_ => println("==================================="))
       .map(purifyEmptyRegion)
       .tap(_ => println("after purifyEmptyRegion"))
       .tap(cs => println(cs.length))
 
+      .tap(_ => println("==================================="))
       .flatMapSubst(makeSubstitution(_, progress))
       .tap(_ => println("after makeSubstitution"))
       .tap(cs => println(cs.length))
       .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
+      .tap(_ => println("==================================="))
+      .exhaustively(progress) {
+        (s, p) => s.flatMap(breakDownConstraints(_, p))
+      }
+      .tap(_ => println("after breakDownConstraints"))
+      .tap(cs => println(cs.length))
+
+      .tap(_ => println("==================================="))
+      .flatMap(eliminateIdentities(_, progress))
+      .tap(_ => println("after eliminateIdentities"))
+      .tap(cs => println(cs.length))
+
+      .tap(_ => println("==================================="))
       .map(reduceTypes(_, progress))
       .tap(_ => println("after reduceTypes"))
       .tap(cs => println(cs.length))
       .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
-      .flatMapSubst(effectUnification(_, progress))
-      .tap(_ => println("after effectUnification"))
+      .tap(_ => println("==================================="))
+      .exhaustively(progress) {
+        (s, p) => s.flatMap(breakDownConstraints(_, p))
+      }
+      .tap(_ => println("after breakDownConstraints"))
       .tap(cs => println(cs.length))
 
+
+      .tap(_ => println("==================================="))
+      .flatMap(eliminateIdentities(_, progress))
+      .tap(_ => println("after eliminateIdentities"))
+      .tap(cs => println(cs.length))
+
+//      .tap(_ => println("==================================="))
+//      .flatMapSubst(effectUnification(_, progress))
+//      .tap(_ => println("after effectUnification"))
+//      .tap(cs => println(cs.length))
+//      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+
+      .tap(_ => println("==================================="))
+      .blockApply(blockEffectUnification(_, progress))
+      .tap(_ => println("after effectUnification"))
+      .tap(cs => println(cs.length))
+      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+
+      .tap(_ => println("==================================="))
       .flatMapSubst(recordUnification(_, progress))
       .tap(_ => println("after recordUnification"))
       .tap(cs => println(cs.length))
 
+      .tap(_ => println("==================================="))
       .flatMapSubst(schemaUnification(_, progress))
       .tap(_ => println("after schemaUnification"))
       .tap(cs => println(cs.length))
 
+      .tap(_ => println("==================================="))
       .flatMap(contextReduction(_, progress))
       .tap(_ => println("after contextReduction"))
       .tap(cs => println(cs.length))
@@ -437,16 +481,45 @@ object ConstraintSolver2 {
     case c => (List(c), SubstitutionTree.empty)
   }
 
-  private def blockEffectUnification(constrs: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
-    // MATT
-    // get eff constraints
-    // process those with EffUnification3
-    // get purification constraints
-    // process those with EffUnification3
-    // concatenate new constraints with non-eff constraints
-    // apply result subst to all constraints
-    // return
-    ???
+  private def blockEffectUnification(constrs0: List[TypeConstraint2], progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
+
+    // Separate out the effect unification stuff
+    val (eqs, rest0) = constrs0.partitionMap {
+      case TypeConstraint2.Equality(tpe1, tpe2, loc) if tpe1.kind == Kind.Eff =>
+        Left((tpe1, tpe2, loc))
+      case c => Right(c)
+    }
+
+    // First solve all the top-level constraints together
+    val (leftovers0, subst1) = EffUnification3.unifyAll(eqs, scope, renv, SetUnification.Options.default)
+    val leftovers1 = leftovers0.map {
+      case (tpe1, tpe2, loc) => TypeConstraint2.Equality(tpe1, tpe2, loc)
+    }
+
+    val tree0 = SubstitutionTree(subst1, Map.empty)
+
+    // Apply the substitution to the remaining constraints
+    val rest1 = rest0.map(tree0.apply)
+
+    // Now we separate the purification constraints and recurse on those individually
+    var branches = Map.empty[Symbol.KindedTypeVarSym, SubstitutionTree]
+    val rest = rest1.map {
+      // If it's a purification constraint, solve the nested constraints
+      // and put the substitution in the tree
+      case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
+        val nested1 = nested0.map(tree0.apply)
+        val (nested, subst2) = blockEffectUnification(nested1, progress)
+        branches = branches + (sym -> subst2)
+        TypeConstraint2.Purification(sym, eff1, eff2, nested, loc)
+
+      // Otherwise no change
+      case c => c
+    }
+
+    val tree = SubstitutionTree(tree0.root, branches)
+    val constrs = leftovers1 ++ rest
+
+    (constrs, tree)
   }
 
   /**
