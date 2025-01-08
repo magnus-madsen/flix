@@ -267,7 +267,7 @@ object ConstraintSolver2 {
             .map(reduceTypes(_, progress))
             .tap(_ => println("after reduceTypes"))
             .tap(cs => println(cs.length))
-            .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+//            .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
             //      .tap(_ => println("==================================="))
             //      .flatMapSubst(effectUnification(_, progress))
@@ -286,7 +286,7 @@ object ConstraintSolver2 {
             .tap(cs => println(cs.length))
 
             .tap(_ => println("==================================="))
-            .map(purifyEmptyRegion)
+            .map(purifyEmptyRegion(_, progress))
             .tap(_ => println("after purifyEmptyRegion"))
             .tap(cs => println(cs.length))
       }
@@ -338,12 +338,13 @@ object ConstraintSolver2 {
     *
     * where `{ }` represents actual substitution
     */
-  private def purifyEmptyRegion(constr: TypeConstraint2): TypeConstraint2 = constr match {
+  private def purifyEmptyRegion(constr: TypeConstraint2, progress: Progress): TypeConstraint2 = constr match {
     case TypeConstraint2.Purification(sym, eff1, eff2, Nil, loc) =>
+      progress.markProgress()
       val purified = Substitution.singleton(sym, Type.Pure)(eff2)
       TypeConstraint2.Equality(eff1, purified, loc)
     case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
-      val nested = nested0.map(purifyEmptyRegion)
+      val nested = nested0.map(purifyEmptyRegion(_, progress))
       TypeConstraint2.Purification(sym, eff1, eff2, nested, loc)
     case c: TypeConstraint2.Trait => c
     case c: TypeConstraint2.Equality => c
