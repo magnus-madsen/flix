@@ -128,7 +128,7 @@ object ConstraintSolver2 {
         progress.markProgress()
         res.exhaustively(progress)(f)
       } else {
-        res
+        this
       }
     }
 
@@ -206,92 +206,96 @@ object ConstraintSolver2 {
       .tap(_ => println("==================================="))
       .tap(_ => println("Original"))
       .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
       .exhaustively(progress) {
-        (s, p) => s.flatMap(breakDownConstraints(_, p))
+        (soup, progress) =>
+          soup
+
+            .tap(_ => println("==================================="))
+            .exhaustively(progress) {
+              (s, p) => s.flatMap(breakDownConstraints(_, p))
+            }
+            .tap(_ => println("after breakDownConstraints"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .flatMap(eliminateIdentities(_, progress))
+            .tap(_ => println("after eliminateIdentities"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .map(reduceTypes(_, progress))
+            .tap(_ => println("after reduceTypes"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .flatMapSubst(makeSubstitution(_, progress))
+            .tap(_ => println("after makeSubstitution"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .exhaustively(progress) {
+              (s, p) => s.flatMap(breakDownConstraints(_, p))
+            }
+            .tap(_ => println("after breakDownConstraints"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .flatMap(eliminateIdentities(_, progress))
+            .tap(_ => println("after eliminateIdentities"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .map(reduceTypes(_, progress))
+            .tap(_ => println("after reduceTypes"))
+            .tap(cs => println(cs.length))
+            //      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+
+            .tap(_ => println("==================================="))
+            .exhaustively(progress) {
+              (s, p) => s.flatMap(breakDownConstraints(_, p))
+            }
+            .tap(_ => println("after breakDownConstraints"))
+            .tap(cs => println(cs.length))
+
+
+            .tap(_ => println("==================================="))
+            .flatMap(eliminateIdentities(_, progress))
+            .tap(_ => println("after eliminateIdentities"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .map(reduceTypes(_, progress))
+            .tap(_ => println("after reduceTypes"))
+            .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+
+            //      .tap(_ => println("==================================="))
+            //      .flatMapSubst(effectUnification(_, progress))
+            //      .tap(_ => println("after effectUnification"))
+            //      .tap(cs => println(cs.length))
+            //      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+
+            .tap(_ => println("==================================="))
+            .flatMapSubst(recordUnification(_, progress))
+            .tap(_ => println("after recordUnification"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .flatMapSubst(schemaUnification(_, progress))
+            .tap(_ => println("after schemaUnification"))
+            .tap(cs => println(cs.length))
+
+            .tap(_ => println("==================================="))
+            .map(purifyEmptyRegion)
+            .tap(_ => println("after purifyEmptyRegion"))
+            .tap(cs => println(cs.length))
       }
-      .tap(_ => println("after breakDownConstraints"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .flatMap(eliminateIdentities(_, progress))
-      .tap(_ => println("after eliminateIdentities"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .map(reduceTypes(_, progress))
-      .tap(_ => println("after reduceTypes"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .map(purifyEmptyRegion)
-      .tap(_ => println("after purifyEmptyRegion"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .flatMapSubst(makeSubstitution(_, progress))
-      .tap(_ => println("after makeSubstitution"))
-      .tap(cs => println(cs.length))
-//      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
-
-      .tap(_ => println("==================================="))
-      .exhaustively(progress) {
-        (s, p) => s.flatMap(breakDownConstraints(_, p))
-      }
-      .tap(_ => println("after breakDownConstraints"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .flatMap(eliminateIdentities(_, progress))
-      .tap(_ => println("after eliminateIdentities"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .map(reduceTypes(_, progress))
-      .tap(_ => println("after reduceTypes"))
-      .tap(cs => println(cs.length))
-//      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
-
-      .tap(_ => println("==================================="))
-      .exhaustively(progress) {
-        (s, p) => s.flatMap(breakDownConstraints(_, p))
-      }
-      .tap(_ => println("after breakDownConstraints"))
-      .tap(cs => println(cs.length))
-
-
-      .tap(_ => println("==================================="))
-      .flatMap(eliminateIdentities(_, progress))
-      .tap(_ => println("after eliminateIdentities"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .map(reduceTypes(_, progress))
-      .tap(_ => println("after reduceTypes"))
-      .tap(cs => println(cs.length))
-
-//      .tap(_ => println("==================================="))
-//      .flatMapSubst(effectUnification(_, progress))
-//      .tap(_ => println("after effectUnification"))
-//      .tap(cs => println(cs.length))
-//      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
       .tap(_ => println("==================================="))
       .blockApply(blockEffectUnification(_, progress))
       .tap(_ => println("after effectUnification"))
       .tap(cs => println(cs.length))
       .tap(cs => cs.foreach(c => println(c.toString.take(500))))
-
-      .tap(_ => println("==================================="))
-      .flatMapSubst(recordUnification(_, progress))
-      .tap(_ => println("after recordUnification"))
-      .tap(cs => println(cs.length))
-
-      .tap(_ => println("==================================="))
-      .flatMapSubst(schemaUnification(_, progress))
-      .tap(_ => println("after schemaUnification"))
-      .tap(cs => println(cs.length))
 
       .tap(_ => println("==================================="))
       .flatMap(contextReduction(_, progress))
@@ -589,11 +593,11 @@ object ConstraintSolver2 {
   // (varU)
   // TODO CONSTR-SOLVER-2 make private
   def makeSubstitution(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint2], SubstitutionTree) = constr match {
-    case TypeConstraint2.Equality(Type.Var(sym, _), tpe2, loc) if !renv.isRigid(sym) && sym.kind == tpe2.kind =>
+    case TypeConstraint2.Equality(Type.Var(sym, _), tpe2, loc) if !renv.isRigid(sym) && sym.kind == tpe2.kind && sym.kind != Kind.Eff =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
 
-    case TypeConstraint2.Equality(tpe1, Type.Var(sym, _), loc) if !renv.isRigid(sym) && tpe1.kind == sym.kind =>
+    case TypeConstraint2.Equality(tpe1, Type.Var(sym, _), loc) if !renv.isRigid(sym) && tpe1.kind == sym.kind && sym.kind != Kind.Eff =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe1))
 
