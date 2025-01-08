@@ -46,7 +46,7 @@ object SetUnification {
   }
 
   /** A listener that observes the operations of [[solve]]. */
-  sealed trait SolverListener {
+  trait SolverListener {
     /** Is called before a unification phase starts. */
     def onEnterPhase(phaseName: String, state: State): Unit = ()
 

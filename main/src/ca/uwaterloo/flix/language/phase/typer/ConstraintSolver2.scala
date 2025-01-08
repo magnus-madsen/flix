@@ -491,7 +491,7 @@ object ConstraintSolver2 {
     }
 
     // First solve all the top-level constraints together
-    val (leftovers0, subst1) = EffUnification3.unifyAll(eqs, scope, renv, SetUnification.Options.default)
+    val (leftovers0, subst1) = EffUnification3.unifyAll(eqs, scope, renv, SetUnification.Options.default, progress)
     val leftovers1 = leftovers0.map {
       case (tpe1, tpe2, loc) => TypeConstraint2.Equality(tpe1, tpe2, loc)
     }
