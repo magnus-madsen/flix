@@ -609,6 +609,7 @@ object ConstraintSolver2 {
     * Ensures that the resulting substitution has been applied to all constraints.
     */
   private def foldSubstitution(constrs: List[TypeConstraint2])(f: TypeConstraint2 => (List[TypeConstraint2], SubstitutionTree)): (List[TypeConstraint2], SubstitutionTree) = {
+//    println(s"${constrs.length} ${constrs.map(_.size).maxOption.getOrElse(0)}")
     var subst = SubstitutionTree.empty
     val newConstrs = constrs.flatMap {
       constr =>
