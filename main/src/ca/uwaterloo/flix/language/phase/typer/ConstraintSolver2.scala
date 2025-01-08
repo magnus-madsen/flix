@@ -233,7 +233,7 @@ object ConstraintSolver2 {
       .flatMapSubst(makeSubstitution(_, progress))
       .tap(_ => println("after makeSubstitution"))
       .tap(cs => println(cs.length))
-      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+//      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
       .tap(_ => println("==================================="))
       .exhaustively(progress) {
@@ -251,7 +251,7 @@ object ConstraintSolver2 {
       .map(reduceTypes(_, progress))
       .tap(_ => println("after reduceTypes"))
       .tap(cs => println(cs.length))
-      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+//      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
       .tap(_ => println("==================================="))
       .exhaustively(progress) {
@@ -264,6 +264,11 @@ object ConstraintSolver2 {
       .tap(_ => println("==================================="))
       .flatMap(eliminateIdentities(_, progress))
       .tap(_ => println("after eliminateIdentities"))
+      .tap(cs => println(cs.length))
+
+      .tap(_ => println("==================================="))
+      .map(reduceTypes(_, progress))
+      .tap(_ => println("after reduceTypes"))
       .tap(cs => println(cs.length))
 
 //      .tap(_ => println("==================================="))

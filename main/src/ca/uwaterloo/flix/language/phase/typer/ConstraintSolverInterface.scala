@@ -86,7 +86,11 @@ object ConstraintSolverInterface {
       // We add extra constraints for the declared type and effect
       val declaredTpeConstr = TypeConstraint2.Equality(tpe, infTpe, loc)
       val declaredEffConstr = TypeConstraint2.Equality(eff, infEff, loc)
-      val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
+      val constrs0 = declaredTpeConstr :: declaredEffConstr :: infConstrs
+
+      // Apply the initial substitution to all the constraints
+      val initialTree = SubstitutionTree(initialSubst, Map.empty)
+      val constrs = constrs0.map(initialTree.apply)
 
       ///////////////////////////////////////////////////////////////////
       //             This is where the stuff happens!                  //
