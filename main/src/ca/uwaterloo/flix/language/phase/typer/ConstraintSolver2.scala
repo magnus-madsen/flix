@@ -452,6 +452,8 @@ object ConstraintSolver2 {
           // then we want the substitution to include "v -> a" but NOT "a -> v".
           val renv = tpe.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
 
+          // MATT we need to instantiate the type of the instance!
+
           // Instantiate all the instance constraints according to the substitution.
           fullyUnify(tpe, instTpe, scope, renv).map {
             case subst => instConstrs.map(subst.apply)
