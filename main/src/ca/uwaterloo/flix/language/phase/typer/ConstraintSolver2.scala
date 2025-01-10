@@ -446,13 +446,20 @@ object ConstraintSolver2 {
 
       // Find the instance that matches
       val matches = insts.flatMap {
-        case Instance(instTpe, instConstrs) =>
+        // TODO PERF: we might be able to do the lookup-by-constructor thing here
+        case Instance(instTpe0, instConstrs0) =>
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
           val renv = tpe.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
 
-          // MATT we need to instantiate the type of the instance!
+          // Refresh the variables in the instance
+          val instVarMap = instTpe0.typeVars.map {
+            case fromVar => fromVar.sym -> Type.freshVar(fromVar.kind, fromVar.loc)
+          }.toMap
+          val instSubst = Substitution(instVarMap)
+          val instTpe = instSubst(instTpe0)
+          val instConstrs = instConstrs0.map(instSubst.apply)
 
           // Instantiate all the instance constraints according to the substitution.
           fullyUnify(tpe, instTpe, scope, renv).map {
