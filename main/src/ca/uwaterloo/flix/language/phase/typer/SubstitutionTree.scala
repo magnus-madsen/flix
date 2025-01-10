@@ -55,8 +55,8 @@ case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeV
       case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) =>
         // Use the root substitution for the external effects.
         // Use the appropriate branch substitution for the nested constraints.
-        // MATT what to do if sym not in branches?
-        TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches.getOrElse(sym, SubstitutionTree.empty).apply), loc)
+        // MATT crazy to default to root?
+        TypeConstraint2.Purification(sym, root(eff1), root(eff2), nested.map(branches.getOrElse(sym, this).apply), loc)
     }
   }
 
