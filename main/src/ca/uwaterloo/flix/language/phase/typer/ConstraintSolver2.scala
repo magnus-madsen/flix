@@ -665,17 +665,19 @@ object ConstraintSolver2 {
     */
   @tailrec
   private def isSyntactic(k: Kind): Boolean = k match {
+    case Kind.Star => true
+    case Kind.Predicate => true
+
+    case Kind.Arrow(_, k2) => isSyntactic(k2)
+
     case Kind.Wild => false // MATT ?
     case Kind.WildCaseSet => false
-    case Kind.Star => true
     case Kind.Eff => false
     case Kind.Bool => false
     case Kind.RecordRow => false
     case Kind.SchemaRow => false
-    case Kind.Predicate => false
     case Kind.Jvm => false
     case Kind.CaseSet(_) => false
-    case Kind.Arrow(_, k2) => isSyntactic(k2)
     case Kind.Error => false
   }
 }
