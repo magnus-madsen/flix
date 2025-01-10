@@ -466,9 +466,9 @@ object ConstraintSolver2 {
         // Case 2: One match. Use the instance constraints.
         case newConstrs :: Nil => newConstrs.map(traitConstraintToTypeConstraint)
 
-        // Case 3: Multiple matches. Throw the constraint back in the pool.
-        // TODO CONSTR-SOLVER-2 Right resiliency strategy?
-        case _ :: _ :: _ => List(c)
+        // Case 3: Multiple matches. We cannot determine which instance's constraints to use.
+        // Resiliency: Since we'll already have an overlapping instance error, just ignore the instance's constraints.
+        case _ :: _ :: _ => Nil
       }
   }
 
