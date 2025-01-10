@@ -484,7 +484,7 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Symbol {
+  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol {
 
     /**
       * Returns the name of `this` symbol.
@@ -508,12 +508,17 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+
+    /**
+      * Returns the source of `this` symbol.
+      */
+    override def src: Source = loc.source
   }
 
   /**
    * Struct Symbol.
    */
-  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Symbol {
+  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol {
     /**
       * Returns the name of `this` symbol.
       */
@@ -536,6 +541,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+
+    /**
+      * Returns the source of `this` symbol.
+      */
+    override def src: Source = loc.source
   }
 
   /**
@@ -765,7 +775,7 @@ object Symbol {
   /**
     * TypeAlias Symbol.
     */
-  final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Symbol {
+  final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -783,6 +793,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = name
+
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Source = loc.source
   }
 
   /**

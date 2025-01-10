@@ -91,6 +91,7 @@ class Flix {
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
+  private var cachedDependenciesAst: TypedAst.Root = TypedAst.empty
 
   /**
     * A cache of error messages for incremental compilation.
@@ -596,7 +597,7 @@ class Flix {
             val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
             errors ++= safetyErrors
 
-            val (afterDependencies, _) = Dependencies.run(afterSafety)
+            val (afterDependencies, _) = Dependencies.run(afterSafety, cachedDependenciesAst, changeSet)
 
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
@@ -606,6 +607,7 @@ class Flix {
               this.cachedKinderAst = afterKinder
               this.cachedResolverAst = afterResolver
               this.cachedTyperAst = afterDependencies
+              this.cachedDependenciesAst = afterDependencies
 
               // We record that no files are dirty in the change set.
               this.changeSet = ChangeSet.Dirty(Set.empty)
