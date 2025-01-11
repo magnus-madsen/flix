@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 
+instance Indexable[String] {
+    type Idx = Int32
+    type Elm = Char
+    type Aef = OutOfBounds
+
+    pub def get(s: String, i: Int32): Char \ OutOfBounds = {
+        if (0 <= i or i < String.length(s))
+            String.charAt(i, s)
+        else
+            OutOfBounds.outOfBounds("index ${i} is out of bounds for String of length ${String.length(s)}")
+    }
+}
+
 mod String {
 
     import java.lang.System
