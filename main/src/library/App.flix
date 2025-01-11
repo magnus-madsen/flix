@@ -18,7 +18,7 @@ mod App {
     ///
     /// Runs the given function `f` handling all effects specified in the signature.
     ///
-    pub def runAll(f: Unit -> a \ ef): a \ (ef - {Clock, Console, Environment, FileReadWithResult, FileWriteWithResult, HttpWithResult, Logger}) + {Net, Sys, IO} =
+    pub def runAll(f: Unit -> a \ ef): a \ (ef - {Clock, Console, Environment, FileReadWithResult, FileWriteWithResult, HttpWithResult, Logger}) + {Net, NonDet, Sys, IO} =
         let r = f |>
             Clock.handle |>
             Console.handle |>
@@ -32,7 +32,7 @@ mod App {
     ///
     /// Runs the given function `f` handling all effects specified in the signature where some handlers may return `Result`.
     ///
-    pub def runAllWithResult(f: Unit -> a \ ef): Result[IoError, a] \ (ef - {Clock, Console, Environment, FileRead, FileWrite, Http, Logger}) + {Net, Sys, IO} =
+    pub def runAllWithResult(f: Unit -> a \ ef): Result[IoError, a] \ (ef - {Clock, Console, Environment, FileRead, FileWrite, Http, Logger}) + {Net, NonDet, Sys, IO} =
         let r = f |>
             Clock.handle |>
             Console.handle |>

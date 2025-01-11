@@ -2,6 +2,12 @@
   "methods": {
     "java.lang.Boolean::getBoolean": "Env, IO",
 
+    "java.lang.Object::toString": "NonDet, IO",
+    "java.lang.Object::finalize": "IO",
+    "java.lang.Object::wait": "NonDet, IO",
+    "java.lang.Object::notifyAll": "NonDet, IO",
+    "java.lang.Object::notify": "NonDet, IO",
+
     "java.lang.Runtime::addShutdownHook": "Exec, Sys, IO",
     "java.lang.Runtime::availableProcessors": "Env, IO",
     "java.lang.Runtime::exec": "Env, Exec, IO",
