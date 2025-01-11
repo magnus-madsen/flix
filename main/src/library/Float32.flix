@@ -294,14 +294,14 @@ mod Float32 {
     ///
     pub def ceil(x: Float32): Float32 =
         let x1 = unsafe Math.ceil(Float.valueOf(x).doubleValue());
-        unsafe Double.valueOf(x1).floatValue()
+        Double.valueOf(x1).floatValue()
 
     ///
     /// Returns `x` rounded down to a Float32 representing the nearest smaller integer value.
     ///
     pub def floor(x: Float32): Float32 =
         let x1 = unsafe Math.floor(Float.valueOf(x).doubleValue());
-        unsafe Double.valueOf(x1).floatValue()
+        Double.valueOf(x1).floatValue()
 
     ///
     /// Returns `x` rounded to a Float32 representing the nearest integer value.
@@ -311,7 +311,7 @@ mod Float32 {
     ///
     pub def round(x: Float32): Float32 =
         let x1 = unsafe Math.rint(Float.valueOf(x).doubleValue());
-        unsafe Double.valueOf(x1).floatValue()
+        Double.valueOf(x1).floatValue()
 
     ///
     /// Returns `b` raised to the power of `n`.

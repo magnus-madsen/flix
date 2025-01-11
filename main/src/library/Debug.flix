@@ -50,7 +50,7 @@ mod Debug {
             case y: Float32 =>
                 unsafe Float.toString(y) + "f32"
             case y: Float64 =>
-                unsafe Double.toString(y)
+                Double.toString(y)
             case y: BigDecimal =>
                 if (unsafe Objects.isNull(y)) {
                     "null"

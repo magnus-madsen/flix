@@ -109,7 +109,7 @@ mod Float64 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Float64] = try {
-        Some(unsafe Double.parseDouble(s.strip()))
+        Some(Double.parseDouble(unsafe s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -127,7 +127,7 @@ mod Float64 {
         if (x < Int8.toFloat64(Int8.minValue()) or x > Int8.toFloat64(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Double.valueOf(x).byteValue())
+            Some(Double.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -142,7 +142,7 @@ mod Float64 {
         if (x < Int16.toFloat64(Int16.minValue()) or x > Int16.toFloat64(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Double.valueOf(x).shortValue())
+            Some(Double.valueOf(x).shortValue())
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -157,7 +157,7 @@ mod Float64 {
         if (x < Int32.toFloat64(Int32.minValue()) or x > Int32.toFloat64(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Double.valueOf(x).intValue())
+            Some(Double.valueOf(x).intValue())
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -175,7 +175,7 @@ mod Float64 {
         if (x < Int64.toFloat64(Int64.minValue()) or x > Int64.toFloat64(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(unsafe Double.valueOf(x).longValue())
+            Some(Double.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an `Option[BigInt]`.
@@ -208,7 +208,7 @@ mod Float64 {
         if (x < Float32.toFloat64(Float32.minValue()) or x > Float32.toFloat64(Float32.maxValue()))
             None
         else
-            Some(unsafe Double.valueOf(x).floatValue())
+            Some(Double.valueOf(x).floatValue())
 
     ///
     /// Convert `x` to an `Option[BigDecimal]`.
@@ -251,7 +251,7 @@ mod Float64 {
         if (isNan(x))
             nanValue
         else
-            unsafe Double.valueOf(clamp(x, minf64, maxf64)).byteValue()
+            Double.valueOf(clamp(x, minf64, maxf64)).byteValue()
 
     ///
     /// Convert `x` to an `Int16`.
@@ -267,7 +267,7 @@ mod Float64 {
         if (isNan(x))
             nanValue
         else
-            unsafe Double.valueOf(clamp(x, minf64, maxf64)).shortValue()
+            Double.valueOf(clamp(x, minf64, maxf64)).shortValue()
 
     ///
     /// Convert `x` to an `Int32`.
@@ -283,7 +283,7 @@ mod Float64 {
         if (isNan(x))
             nanValue
         else
-            unsafe Double.valueOf(clamp(x, minf64, maxf64)).intValue()
+            Double.valueOf(clamp(x, minf64, maxf64)).intValue()
 
     ///
     /// Convert `x` to an `Int64`.
@@ -299,7 +299,7 @@ mod Float64 {
         if (isNan(x))
             nanValue
         else
-            unsafe Double.valueOf(clamp(x, minf64, maxf64)).longValue()
+            Double.valueOf(clamp(x, minf64, maxf64)).longValue()
 
     ///
     /// Convert `x` to a `Float32`.
@@ -312,7 +312,7 @@ mod Float64 {
         if (isNan(x))
             Float32.nan()
         else
-            unsafe Double.valueOf(clamp(x, minf64, maxf64)).floatValue()
+            Double.valueOf(clamp(x, minf64, maxf64)).floatValue()
 
     ///
     /// Returns the absolute value of `x`.
@@ -359,7 +359,7 @@ mod Float64 {
     /// code you should not need to use `java.lang.Double`.
     ///
     pub def doubleValue(i: Double): Float64 =
-        unsafe i.doubleValue()
+        i.doubleValue()
 
     ///
     /// Convert an Float64 value to its object representation (i.e. java.lang.Double).
@@ -368,6 +368,6 @@ mod Float64 {
     /// code you should not need to use `java.lang.Double`.
     ///
     pub def valueOf(i: Float64): Double =
-        unsafe Double.valueOf(i)
+        Double.valueOf(i)
 
 }

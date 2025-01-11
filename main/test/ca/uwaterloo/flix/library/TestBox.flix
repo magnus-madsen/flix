@@ -103,16 +103,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def float64Unbox01(): Bool = unsafe unbox(Double.valueOf(1.23)) == 1.23
+    def float64Unbox01(): Bool = unbox(Double.valueOf(1.23)) == 1.23
 
     @test
-    def float64Unbox02(): Bool = unsafe unbox(Double.valueOf(-4.56)) == -4.56
+    def float64Unbox02(): Bool = unbox(Double.valueOf(-4.56)) == -4.56
 
     @test
-    def float64Box01(): Bool = unsafe box(1.23).equals(Double.valueOf(1.23))
+    def float64Box01(): Bool = box(1.23).equals(Double.valueOf(1.23))
 
     @test
-    def float64Box02(): Bool = unsafe box(-4.56).equals(Double.valueOf(-4.56))
+    def float64Box02(): Bool = box(-4.56).equals(Double.valueOf(-4.56))
 
     @test
     def float64RoundTrip01(): Bool = unbox(box(1.23)) == 1.23

@@ -2,6 +2,7 @@
   "classes": {
     "java.lang.Boolean": "",
     "java.lang.Character": "",
+    "java.lang.Double": "",
 
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",

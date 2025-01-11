@@ -27,7 +27,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Float(123.456f32)
 
     @test
-    def testInvokeConstructor04(): Double \ IO =
+    def testInvokeConstructor04(): Double =
         new Double(123.456f64)
 
     @test

@@ -60,8 +60,8 @@ instance Box[Float32] {
 
 instance Box[Float64] {
     type Boxed = Double
-    pub def box(x: Float64): Double = unsafe Double.valueOf(x)
-    pub def unbox(x: Double): Float64 = unsafe x.doubleValue()
+    pub def box(x: Float64): Double = Double.valueOf(x)
+    pub def unbox(x: Double): Float64 = x.doubleValue()
 }
 
 instance Box[Int8] {
