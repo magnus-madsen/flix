@@ -115,7 +115,7 @@ object ConstraintSolver2 {
     }
 
     def tap(f: List[TypeConstraint2] => Unit): Soup = {
-//      f(constrs)
+      f(constrs)
       this
     }
 
@@ -162,10 +162,12 @@ object ConstraintSolver2 {
 
   /**
     * Solves the given constraint set as far as possible.
+    *
+    * INVARIANT: The initial substitution is already applied to the constraints.
     */
-  def solveAll(constrs0: List[TypeConstraint2])(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
+  def solveAll(constrs0: List[TypeConstraint2], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): (List[TypeConstraint2], SubstitutionTree) = {
     var constrs = constrs0
-    var subst = SubstitutionTree.empty
+    var subst = initialSubst
     var progressMade = true
     while (progressMade) {
       val progress = Progress()
@@ -206,6 +208,7 @@ object ConstraintSolver2 {
       .tap(_ => println("==================================="))
       .tap(_ => println("Original"))
       .tap(cs => println(cs.length))
+      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
       .exhaustively(progress) {
         (soup, progress) =>
           soup
@@ -248,7 +251,7 @@ object ConstraintSolver2 {
             .map(reduceTypes(_, progress))
             .tap(_ => println("after reduceTypes"))
             .tap(cs => println(cs.length))
-            //      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+            .tap(cs => cs.foreach(c => println(c.toString.take(500))))
 
             .tap(_ => println("==================================="))
             .exhaustively(progress) {
@@ -531,7 +534,7 @@ object ConstraintSolver2 {
       // and put the substitution in the tree
       case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
         val nested1 = nested0.map(tree0.apply)
-        val (nested, subst2) = blockEffectUnification(nested1, progress)
+        val (nested, subst2) = blockEffectUnification(nested1, progress)(scope.enter(sym), renv, flix)
         branches = branches + (sym -> subst2)
         TypeConstraint2.Purification(sym, eff1, eff2, nested, loc)
 

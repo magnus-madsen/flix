@@ -23,6 +23,12 @@ sealed trait TypeConstraint2 {
     case TypeConstraint2.Trait(sym, tpe, loc) => tpe.size
     case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) => eff1.size + eff2.size + nested.map(_.size).sum
   }
+
+  override def toString: String = this match {
+    case TypeConstraint2.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
+    case TypeConstraint2.Trait(sym, tpe, _) => s"$sym[$tpe]"
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested, _) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+  }
 }
 
 object TypeConstraint2 {

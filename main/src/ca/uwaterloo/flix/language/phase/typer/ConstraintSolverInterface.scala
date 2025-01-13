@@ -97,7 +97,7 @@ object ConstraintSolverInterface {
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
 
-      val (leftovers, tree) = ConstraintSolver2.solveAll(constrs)(Scope.Top, renv, tenv, eenv, flix)
+      val (leftovers, tree) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil => (tree, Nil)
         case errs@(_ :: _) => (tree, errs.map(toTypeError(_, renv))) // TODO use getErrorsFromTypeConstraints
