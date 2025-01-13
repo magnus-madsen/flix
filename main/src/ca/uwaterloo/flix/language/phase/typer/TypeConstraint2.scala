@@ -27,7 +27,7 @@ sealed trait TypeConstraint2 {
   override def toString: String = this match {
     case TypeConstraint2.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
     case TypeConstraint2.Trait(sym, tpe, _) => s"$sym[$tpe]"
-    case TypeConstraint2.Purification(sym, eff1, eff2, nested, _) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested, _) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ \n${nested.mkString("\n∧ ").replace("\n", "\n  ")}"
   }
 }
 

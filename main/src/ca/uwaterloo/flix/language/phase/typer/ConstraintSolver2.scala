@@ -208,7 +208,7 @@ object ConstraintSolver2 {
       .tap(_ => println("==================================="))
       .tap(_ => println("Original"))
       .tap(cs => println(cs.length))
-      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+      .tap(cs => cs.foreach(c => println(c.toString)))
       .exhaustively(progress) {
         (soup, progress) =>
           soup
@@ -219,21 +219,25 @@ object ConstraintSolver2 {
             }
             .tap(_ => println("after breakDownConstraints"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .flatMap(eliminateIdentities(_, progress))
             .tap(_ => println("after eliminateIdentities"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .map(reduceTypes(_, progress))
             .tap(_ => println("after reduceTypes"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .flatMapSubst(makeSubstitution(_, progress))
             .tap(_ => println("after makeSubstitution"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .exhaustively(progress) {
@@ -241,17 +245,19 @@ object ConstraintSolver2 {
             }
             .tap(_ => println("after breakDownConstraints"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .flatMap(eliminateIdentities(_, progress))
             .tap(_ => println("after eliminateIdentities"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .map(reduceTypes(_, progress))
             .tap(_ => println("after reduceTypes"))
             .tap(cs => println(cs.length))
-            .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .exhaustively(progress) {
@@ -259,51 +265,57 @@ object ConstraintSolver2 {
             }
             .tap(_ => println("after breakDownConstraints"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
 
             .tap(_ => println("==================================="))
             .flatMap(eliminateIdentities(_, progress))
             .tap(_ => println("after eliminateIdentities"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .map(reduceTypes(_, progress))
             .tap(_ => println("after reduceTypes"))
             .tap(cs => println(cs.length))
-//            .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             //      .tap(_ => println("==================================="))
             //      .flatMapSubst(effectUnification(_, progress))
             //      .tap(_ => println("after effectUnification"))
             //      .tap(cs => println(cs.length))
-            //      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+            //      .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .flatMapSubst(recordUnification(_, progress))
             .tap(_ => println("after recordUnification"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .flatMapSubst(schemaUnification(_, progress))
             .tap(_ => println("after schemaUnification"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
 
             .tap(_ => println("==================================="))
             .map(purifyEmptyRegion(_, progress))
             .tap(_ => println("after purifyEmptyRegion"))
             .tap(cs => println(cs.length))
+            .tap(cs => cs.foreach(c => println(c.toString)))
       }
 
       .tap(_ => println("==================================="))
       .blockApply(blockEffectUnification(_, progress))
       .tap(_ => println("after effectUnification"))
       .tap(cs => println(cs.length))
-      .tap(cs => cs.foreach(c => println(c.toString.take(500))))
+      .tap(cs => cs.foreach(c => println(c.toString)))
 
       .tap(_ => println("==================================="))
       .flatMap(contextReduction(_, progress))
       .tap(_ => println("after contextReduction"))
       .tap(cs => println(cs.length))
+      .tap(cs => cs.foreach(c => println(c.toString)))
 
       .get
   }
@@ -591,7 +603,7 @@ object ConstraintSolver2 {
   private def reduceTypes(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): TypeConstraint2 = constr match {
     case TypeConstraint2.Equality(tpe1, tpe2, loc) => TypeConstraint2.Equality(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), loc)
     case TypeConstraint2.Trait(sym, tpe, loc) => TypeConstraint2.Trait(sym, reduce(tpe, scope, renv)(progress, eqenv, flix), loc)
-    case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) => TypeConstraint2.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), nested.map(reduceTypes(_, progress)), loc) // MATT probably reduce in new scope!
+    case TypeConstraint2.Purification(sym, eff1, eff2, nested, loc) => TypeConstraint2.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)), loc)
   }
 
   /**
