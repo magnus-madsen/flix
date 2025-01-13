@@ -194,7 +194,7 @@ object Typer {
     val eff = if (open) Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult2(infTconstrs, tpe, eff, infRenv)
-    val (subst, constraintErrors) = Debug.runWithTimeout(1000_999999) { () =>
+    val (subst, constraintErrors) = Debug.runWithTimeout(1000) { () =>
       ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     } match {
       case None =>
