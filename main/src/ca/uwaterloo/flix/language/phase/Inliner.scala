@@ -52,7 +52,7 @@ object Inliner {
     * Returns `true` if `def0` should be inlined.
     */
   private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
-    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
+    val mayInline = def0.context.occur != DontInline && def0.context.occur != Dangerous && !def0.context.isSelfRecursive
     val belowSoft = def0.context.size < SoftInlineThreshold
     val belowHard = def0.context.size < HardInlineThreshold
     val shouldInline = belowSoft || (def0.context.isDirectCall && belowHard) || (def0.context.occur == Once && belowHard)
@@ -76,7 +76,7 @@ object Inliner {
     * Converts definition from OccurrenceAst to LiftedAst.
     */
   private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: OccurrenceAst.Root): LiftedAst.Def = {
-    val convertedExp = visitExp(def0.exp, Map.empty)(root, flix)
+    val convertedExp = if (def0.context.occur != Dangerous) visitExp(def0.exp, Map.empty)(root, flix) else toLiftedExpr(def0.exp)
     val cparams = def0.cparams.map {
       case (OccurrenceAst.FormalParam(sym, mod, tpe, loc), _) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
@@ -137,9 +137,14 @@ object Inliner {
         case Some(e1) =>
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case Expr.LiftedExp(exp) => exp
+            case Expr.LiftedExp(e) =>
+              //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+              e
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-            case Expr.OccurrenceExp(exp) => visitExp(exp, subst0)
+            case Expr.OccurrenceExp(exp) =>
+              val e = visitExp(exp, subst0)
+              //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+              e
           }
       }
 
@@ -158,7 +163,10 @@ object Inliner {
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
+            val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs :+ e2, Map.empty)
+            //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+            //assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc, inlining '$sym'")
+            e
           } else {
             LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
           }
@@ -172,7 +180,10 @@ object Inliner {
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
+        val e = bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
+        //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym'")
+        //assert(e.purity == purity, s"expected '$purity', got '${e.purity}' at $loc, inlining '$sym'")
+        e
       } else {
         LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
       }
@@ -455,6 +466,91 @@ object Inliner {
     */
   private def visitFormalParam(fparam: OccurrenceAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
- }
+  }
+
+  private def toLiftedExpr(exp0: OccurrenceAst.Expr): LiftedAst.Expr = exp0 match {
+    case OccurrenceAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
+
+    case OccurrenceAst.Expr.Var(sym, tpe, loc) =>
+      LiftedAst.Expr.Var(sym, tpe, loc)
+
+    case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      val es = exps.map(toLiftedExpr)
+      LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+      val e1 = toLiftedExpr(exp1)
+      val e2 = toLiftedExpr(exp2)
+      LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(toLiftedExpr)
+      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      val e1 = toLiftedExpr(exp1)
+      val e2 = toLiftedExpr(exp2)
+      val e3 = toLiftedExpr(exp3)
+      LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
+      val e = toLiftedExpr(exp)
+      val bs = branches.map {
+        case (sym, br) => sym -> toLiftedExpr(br)
+      }
+      LiftedAst.Expr.Branch(e, bs, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.JumpTo(sym, tpe, purity, loc) => LiftedAst.Expr.JumpTo(sym, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
+      val e1 = toLiftedExpr(exp1)
+      val e2 = toLiftedExpr(exp2)
+      LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+      val e1 = toLiftedExpr(exp1)
+      val e2 = toLiftedExpr(exp2)
+      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+      val e = toLiftedExpr(exp)
+      LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+      val e = toLiftedExpr(exp)
+      val rs = rules.map {
+        case OccurrenceAst.CatchRule(sym, clazz, exp) =>
+          val e = toLiftedExpr(exp)
+          LiftedAst.CatchRule(sym, clazz, e)
+      }
+      LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      val e = toLiftedExpr(exp)
+      val rs = rules.map {
+        case OccurrenceAst.HandlerRule(op, fparams, exp) =>
+          val fps = fparams.map(visitFormalParam)
+          val e = toLiftedExpr(exp)
+          LiftedAst.HandlerRule(op, fps, e)
+      }
+      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.Do(op, exps, tpe, purity, loc) =>
+      val es = exps.map(toLiftedExpr)
+      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
+
+    case OccurrenceAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+      val methods = methods0.map {
+        case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+          val f = fparams.map {
+            case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+          }
+          val c = toLiftedExpr(exp)
+          LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
+      }
+      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+
+  }
+
 
 }
