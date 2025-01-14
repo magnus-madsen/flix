@@ -187,7 +187,7 @@ object TypeReconstruction2 {
 
     case KindedAst.Expr.Scope(sym, regionVar, exp, evar, loc) =>
       // Use the appropriate branch for the scope.
-      val e = visitExp(exp)(subst.branches(regionVar.sym))
+      val e = visitExp(exp)(subst.branches.getOrElse(regionVar.sym, SubstitutionTree.empty)) // MATT  shouldn't need default
       val tpe = e.tpe
       val eff = subst(evar)
       val bnd = TypedAst.Binder(sym, eff)
