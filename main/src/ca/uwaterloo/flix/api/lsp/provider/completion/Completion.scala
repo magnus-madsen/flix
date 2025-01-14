@@ -287,7 +287,6 @@ sealed trait Completion {
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit            = TextEdit(context.range, label),
         documentation       = Some(enm.doc.text),
-        insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Enum,
         additionalTextEdits = additionalTextEdit
       )
@@ -310,6 +309,25 @@ sealed trait Completion {
         textEdit            = TextEdit(context.range, snippet),
         documentation       = Some(struct.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Struct,
+        additionalTextEdits = additionalTextEdit
+      )
+
+    case Completion.TraitCompletion(trt, ap, qualified, inScope) =>
+      val qualifiedName = trt.sym.toString
+      val name = if (qualified) qualifiedName else trt.sym.name
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, name),
+        documentation       = Some(trt.doc.text),
         kind                = CompletionItemKind.Struct,
         additionalTextEdits = additionalTextEdit
       )
@@ -732,14 +750,24 @@ object Completion {
   case class EnumCompletion(enm: TypedAst.Enum, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
-   * Represents a Enum completion
-   *
-   * @param struct    the struct construct.
-   * @param ap        the anchor position for the use statement.
-   * @param qualified indicate whether to use a qualified label.
-   * @param inScope   indicate whether to the enum is inScope.
-   */
+    * Represents a struct completion
+    *
+    * @param struct    the struct construct.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the enum is inScope.
+    */
   case class StructCompletion(struct: TypedAst.Struct, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a trait completion
+    *
+    * @param trt       trait struct construct.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the enum is inScope.
+    */
+  case class TraitCompletion(trt: TypedAst.Trait, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Signature completion

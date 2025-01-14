@@ -51,7 +51,7 @@ object CodeActionProvider {
     case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
       mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, ap,  _, _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedTag(name, ap, _, loc) if overlaps(range, loc) =>

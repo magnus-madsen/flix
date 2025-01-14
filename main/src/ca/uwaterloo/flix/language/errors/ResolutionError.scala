@@ -917,14 +917,14 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined class: '${qn.toString}'."
+  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined trait: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined class '${red(qn.toString)}'.
+      s""">> Undefined trait '${red(qn.toString)}'.
          |
-         |${code(loc, "class not found")}
+         |${code(loc, "trait not found")}
          |
          |""".stripMargin
     }
