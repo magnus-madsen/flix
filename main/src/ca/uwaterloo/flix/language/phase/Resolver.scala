@@ -3276,10 +3276,10 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass2(className: String, ns0: Name.NName, env0: LocalScope, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
-    lookupJvmClass(className, ns0, loc) match {
+  private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, env0: LocalScope, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
+    lookupJvmClass(className.name, ns0, loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
-      case Result.Err(e) => env0.get(className) match {
+      case Result.Err(e) => env0.get(className.name) match {
         case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
         case _ => Result.Err(e)
       }
