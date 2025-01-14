@@ -1419,14 +1419,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    c: v
         |}
         |
-        |def Foo(): Unit = {
+        |def foo(): Unit = {
         |    region rc {
         |        new S @ rc {a = 3, b = 4, c = "hello"};
         |        ()
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1439,14 +1439,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    c: v
         |}
         |
-        |def Foo(): Unit = {
+        |def foo(): Unit = {
         |    region rc {
         |        new S @ rc {a = (), b = "hi", c = "hello"};
         |        ()
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1459,14 +1459,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    c: v
         |}
         |
-        |def Foo(): Unit = {
+        |def foo(): Unit = {
         |    region rc {
         |        new S @ rc {a = 3, b = "hi", c = new S @ rc {a = 4, b = 3, c = ()}};
         |        ()
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1479,7 +1479,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    c: v
         |}
         |mod S {
-        |    def Foo(): Unit = {
+        |    def foo(): Unit = {
         |        region rc {
         |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
         |            s->a + s->b;
@@ -1488,7 +1488,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1499,7 +1499,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    c: v
         |}
         |mod S {
-        |    def Foo(): Unit = {
+        |    def foo(): Unit = {
         |        region rc {
         |            let s1 = new S @ rc {c = 3};
         |            let s2 = new S @ rc {c = "hello"};
@@ -1509,7 +1509,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1522,7 +1522,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    c: v
         |}
         |mod S {
-        |    def Foo(): Unit = {
+        |    def foo(): Unit = {
         |        region rc {
         |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
         |            s->a = s->b;
@@ -1531,7 +1531,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1542,7 +1542,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    mut c: v
         |}
         |mod S {
-        |    def Foo(): Unit = {
+        |    def foo(): Unit = {
         |        region rc {
         |            let s1 = new S @ rc {c = 3};
         |            let s2 = new S @ rc {c = "hello"};
@@ -1552,7 +1552,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
