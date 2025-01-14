@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
@@ -194,7 +194,7 @@ object ConstraintSolverInterface {
     */
   private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], econstrs: List[EqualityConstraint]): ListMap[Symbol.AssocTypeSym, AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
-      case (acc, EqualityConstraint(AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
+      case (acc, EqualityConstraint(AssocTypeSymUse(sym, _), tpe1, tpe2, _)) =>
         val assoc = AssocTypeDef(tpe1, tpe2)
         acc + (sym -> assoc)
     }
