@@ -2532,7 +2532,7 @@ object Parser2 {
       expect(TokenKind.KeywordCase, SyntacticContext.Expr.OtherExpr)
       nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
-      nameAllowQualified(NAME_JAVA, tail = Set(), context = SyntacticContext.Expr.OtherExpr)
+      nameUnqualified(NAME_JAVA, SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
       statement()
       close(mark, TreeKind.Expr.TryCatchRuleFragment)

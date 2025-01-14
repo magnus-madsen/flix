@@ -1781,9 +1781,11 @@ object Weeder2 {
 
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
-      mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
-        (ident, qname, expr) => CatchRule(ident, javaQnameToFqn(qname), expr)
+      val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
+      mapN(pickExpr(tree)){
+        expr => CatchRule(idents.head, idents.last, expr)
       }
+
     }
 
     private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
