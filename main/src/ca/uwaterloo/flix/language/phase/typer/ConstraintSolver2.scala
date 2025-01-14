@@ -115,7 +115,7 @@ object ConstraintSolver2 {
     }
 
     def tap(f: List[TypeConstraint2] => Unit): Soup = {
-//      f(constrs)
+      f(constrs)
       this
     }
 
@@ -625,11 +625,11 @@ object ConstraintSolver2 {
   // (varU)
   // TODO CONSTR-SOLVER-2 make private
   def makeSubstitution(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint2], SubstitutionTree) = constr match {
-    case TypeConstraint2.Equality(Type.Var(sym, _), tpe2, loc) if !renv.isRigid(sym) && sym.kind == tpe2.kind && sym.kind != Kind.Eff =>
+    case TypeConstraint2.Equality(Type.Var(sym, _), tpe2, loc) if !renv.isRigid(sym) && sym.kind == tpe2.kind && sym.kind != Kind.Eff && !tpe2.typeVars.exists(_.sym == sym) =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
 
-    case TypeConstraint2.Equality(tpe1, Type.Var(sym, _), loc) if !renv.isRigid(sym) && tpe1.kind == sym.kind && sym.kind != Kind.Eff =>
+    case TypeConstraint2.Equality(tpe1, Type.Var(sym, _), loc) if !renv.isRigid(sym) && tpe1.kind == sym.kind && sym.kind != Kind.Eff && !tpe1.typeVars.exists(_.sym == sym) =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe1))
 
