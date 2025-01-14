@@ -544,10 +544,13 @@ object ConstraintSolver2 {
     val rest = rest1.map {
       // If it's a purification constraint, solve the nested constraints
       // and put the substitution in the tree
-      case TypeConstraint2.Purification(sym, eff1, eff2, nested0, loc) =>
+      case TypeConstraint2.Purification(sym, eff1, eff2_0, nested0, loc) =>
         val nested1 = nested0.map(tree0.apply)
         val (nested, subst2) = blockEffectUnification(nested1, progress)(scope.enter(sym), renv, flix)
         branches = branches + (sym -> subst2)
+
+        // apply the inner substitution to the to-be-purified effect
+        val eff2 = subst2.root(eff2_0)
         TypeConstraint2.Purification(sym, eff1, eff2, nested, loc)
 
       // Otherwise no change
