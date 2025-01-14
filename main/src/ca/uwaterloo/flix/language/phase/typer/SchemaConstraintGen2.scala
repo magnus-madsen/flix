@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Denotation, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen2.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
@@ -134,8 +135,8 @@ object SchemaConstraintGen2 {
         // Require Order and Foldable instances.
         val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
         val foldableSym = PredefinedTraits.lookupTraitSym("Foldable", root)
-        val order = TraitConstraint(TraitConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
-        val foldable = TraitConstraint(TraitConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
+        val order = TraitConstraint(TraitSymUse(orderSym, loc), freshElmTypeVar, loc)
+        val foldable = TraitConstraint(TraitSymUse(foldableSym, loc), freshTypeConstructorVar, loc)
 
         c.addClassConstraints(List(order, foldable), loc)
 
@@ -273,7 +274,7 @@ object SchemaConstraintGen2 {
       PredefinedTraits.lookupTraitSym("Eq", root),
       PredefinedTraits.lookupTraitSym("Order", root),
     )
-    traits.map(trt => TraitConstraint(TraitConstraint.Head(trt, loc), tpe, loc))
+    traits.map(trt => TraitConstraint(TraitSymUse(trt, loc), tpe, loc))
   }
 
   /**
@@ -288,7 +289,7 @@ object SchemaConstraintGen2 {
       PredefinedTraits.lookupTraitSym("JoinLattice", root),
       PredefinedTraits.lookupTraitSym("MeetLattice", root),
     )
-    traits.map(trt => TraitConstraint(TraitConstraint.Head(trt, loc), tpe, loc))
+    traits.map(trt => TraitConstraint(TraitSymUse(trt, loc), tpe, loc))
   }
 
 

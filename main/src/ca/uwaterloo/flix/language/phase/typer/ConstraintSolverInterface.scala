@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -167,7 +168,7 @@ object ConstraintSolverInterface {
     */
   private def expandTraitEnv(tenv: TraitEnv, tconstrs: List[TraitConstraint]): TraitEnv = {
     tconstrs.foldLeft(tenv) {
-      case (acc, TraitConstraint(TraitConstraint.Head(sym, _), arg, loc)) =>
+      case (acc, TraitConstraint(TraitSymUse(sym, _), arg, loc)) =>
         acc.addInstance(sym, arg)
     }
   }
