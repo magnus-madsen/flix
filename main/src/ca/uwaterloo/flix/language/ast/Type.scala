@@ -603,7 +603,7 @@ object Type {
     */
   case class AssocType(symUse: AssocTypeSymUse, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType {
     override def equals(obj: Any): Boolean = obj match {
-      case that: AssocType => this.symUse == that.symUse && this.arg == that.arg
+      case that: AssocType => this.symUse.sym == that.symUse.sym && this.arg == that.arg
       case _ => false
     }
 
