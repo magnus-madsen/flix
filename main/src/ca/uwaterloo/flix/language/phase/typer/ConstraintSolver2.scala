@@ -115,7 +115,7 @@ object ConstraintSolver2 {
     }
 
     def tap(f: List[TypeConstraint2] => Unit): Soup = {
-      f(constrs)
+//      f(constrs)
       this
     }
 
