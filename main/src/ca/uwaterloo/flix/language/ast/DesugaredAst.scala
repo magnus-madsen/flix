@@ -378,7 +378,7 @@ object DesugaredAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
+  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
 
