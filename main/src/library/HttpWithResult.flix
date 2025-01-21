@@ -91,9 +91,9 @@ mod HttpWithResult {
     ///
     /// Handles the `HttpWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `HttpWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `HttpWithResult` effect using the `Net`, `NonDet`, and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - HttpWithResult) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - HttpWithResult) + {Net, NonDet, IO} = x ->
         run {
             f(x)
         } with handler HttpWithResult {
@@ -135,8 +135,8 @@ mod HttpWithResult {
     ///
     /// Runs the `HttpWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `HttpWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `HttpWithResult` effect using the `Net`, `NonDet`, and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - HttpWithResult) + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - HttpWithResult) + {Net, NonDet, IO} = handle(f)()
 
 }
