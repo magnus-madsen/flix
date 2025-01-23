@@ -16,82 +16,82 @@
 mod TestEnvironment {
 
     @test
-    def testGetEnv01(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetEnv01(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Map.isEmpty(Environment.getEnv())
     )()
 
     @test
-    def testGetVar01(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetVar01(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getVar("PATH"))
     )()
 
     @test
-    def testGetVar02(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetVar02(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         Option.isEmpty(Environment.getVar("UNKNOWN"))
     )()
 
     @test
-    def testGetProp02(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetProp02(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         Option.isEmpty(Environment.getProp("UNKNOWN"))
     )()
 
     @test
-    def testGetOsName(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetOsName(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getOsName())
     )()
 
     @test
-    def testGetOsArch(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetOsArch(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getOsArch())
     )()
 
     @test
-    def testGetOsVersion(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetOsVersion(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getOsVersion())
     )()
 
     @test
-    def testGetFileSeparator(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetFileSeparator(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not String.isEmpty(Environment.getFileSeparator())
     )()
 
     @test
-    def testGetPathSeparator(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetPathSeparator(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not String.isEmpty(Environment.getPathSeparator())
     )()
 
     @test
-    def testGetLineSeparator(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetLineSeparator(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not String.isEmpty(Environment.getLineSeparator())
     )()
 
     @test
-    def testGetCurrentWorkingDirectory(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetCurrentWorkingDirectory(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getCurrentWorkingDirectory())
     )()
 
     @test
-    def testGetTemporaryDirectory(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetTemporaryDirectory(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getTemporaryDirectory())
     )()
 
     @test
-    def testGetUserName(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetUserName(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getUserName())
     )()
 
     @test
-    def testGetUserHomeDirectory(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetUserHomeDirectory(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         not Option.isEmpty(Environment.getUserHomeDirectory())
     )()
 
     @test
-    def testGetVirtualProcessors(): Bool \ {Sys, IO} = Environment.handle(() ->
+    def testGetVirtualProcessors(): Bool \ {Env, Sys, IO} = Environment.handle(() ->
         Environment.getVirtualProcessors() > 0
     )()
 
     @test
-    def testGetArgs(): List[String] \ {Sys, IO} = Environment.handle(() ->
+    def testGetArgs(): List[String] \ {Env, Sys, IO} = Environment.handle(() ->
         Environment.getArgs()
     )()
 
