@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 object FormatType {
@@ -28,7 +29,8 @@ object FormatType {
     *
     * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+  def formatType(tpe0: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+    val tpe = TypeSimplifier.simplify(tpe0)
     val renamed = renv match {
       case None => tpe
       case Some(env) => alphaRename(tpe, env)

@@ -26,7 +26,7 @@ object TypePrinter {
 
   /** Returns the [[DocAst.Type]] representation of `tpe`. */
   def print(tpe: Type): DocAst.Type = {
-    val (base, args) = collectApp(tpe)
+    val (base, args) = tpe.fullApply
     // Make the well-kinded types pretty.
     (base, args) match {
       case (Type.Var(sym, _), _) => mkApp(DocAst.Type.Var(sym), args.map(print))
@@ -83,7 +83,7 @@ object TypePrinter {
       case (Type.JvmToEff(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(tpe))), args.map(print))
       case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))
       case (Type.Apply(_, _, _), _) =>
-        // `collectApp` does not return Apply as base.
+        // `Type.fullApply` does not return Apply as base.
         DocAst.Type.Meta("bug in TypePrinter")
     }
   }
@@ -95,15 +95,5 @@ object TypePrinter {
   }
 
   private def printJvmMember(member: Type.JvmMember): DocAst.Type = DocAst.Type.Meta("JvmMember")
-
-  /** Returns e.g. `App(App(Tuple, Char), Char)` as `(Tuple, List(Char, Char))`. */
-  private def collectApp(tpe: Type): (Type, List[Type]) = {
-    @tailrec
-    def helper(tpe0: Type, acc: List[Type]): (Type, List[Type]) = tpe0 match {
-      case Type.Apply(tpe1, tpe2, _) => helper(tpe1, tpe2 :: acc)
-      case _ => (tpe0, acc)
-    }
-    helper(tpe, Nil)
-  }
 
 }
