@@ -299,26 +299,26 @@ object SetUnification {
       // ---
       // {f1 ~ univ, f2 ~ univ, ..},
       // []
-      case (inter@Inter(_, _, _, _, _, _, _), Univ) =>
-        val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
+      case (Inter(l), Univ) =>
+        val eqs = l.toList.map(Equation.mk(_, Univ, loc))
         Some(eqs, SetSubstitution.empty)
 
       // Symmetric case.
-      case (Univ, inter@Inter(_, _, _, _, _, _, _)) =>
-        val eqs = inter.mapSubformulas(Equation.mk(_, Univ, loc))
+      case (Univ, Inter(l)) =>
+        val eqs = l.toList.map(Equation.mk(_, Univ, loc))
         Some(eqs, SetSubstitution.empty)
 
       // f1 ∪ f2 ∪ .. ~ empty
       // ---
       // {f1 ~ empty, f2 ~ empty, ..},
       // []
-      case (union@Union(_), Empty) =>
-        val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
+      case (Union(l), Empty) =>
+        val eqs = l.toList.map(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
 
       // Symmetric Case.
-      case (Empty, union@Union(_)) =>
-        val eqs = union.mapSubformulas(Equation.mk(_, Empty, loc))
+      case (Empty, Union(l)) =>
+        val eqs = l.toList.map(Equation.mk(_, Empty, loc))
         Some(eqs, SetSubstitution.empty)
 
       case _ =>

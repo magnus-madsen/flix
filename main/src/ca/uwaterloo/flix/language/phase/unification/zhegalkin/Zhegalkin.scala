@@ -34,9 +34,8 @@ object Zhegalkin {
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinCst.mkCst(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f) => ZhegalkinExpr.mkCompl(toZhegalkin(f))
-    case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
-      val polys = terms.map(toZhegalkin)
+    case Inter(l) =>
+      val polys = l.toList.map(toZhegalkin)
       polys.reduce(ZhegalkinExpr.mkInter)
     case Union(l) =>
       val polys = l.toList.map(toZhegalkin)

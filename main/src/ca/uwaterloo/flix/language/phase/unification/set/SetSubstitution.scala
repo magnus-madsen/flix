@@ -63,32 +63,7 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       val f1Applied = applyInternal(f1)
       if (f1Applied eq f1) compl else SetFormula.mkCompl(f1Applied)
 
-    case inter@SetFormula.Inter(_, _, varsPos, _, _, varsNeg, Nil)
-      if varsPos.forall(v => !this.m.contains(v.x)) && varsNeg.forall(v => !this.m.contains(v.x)) =>
-      inter
-
-    case SetFormula.Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      val ts = ListBuffer.empty[SetFormula]
-      for (x <- varsPos) {
-        val x1 = applyInternal(x)
-        if (x1 == SetFormula.Empty) return SetFormula.Empty
-        ts += x1
-      }
-      for (x <- varsNeg) {
-        val x1 = applyInternal(x)
-        if (x1 == SetFormula.Univ) return SetFormula.Empty
-        ts += SetFormula.mkCompl(x1)
-      }
-      for (e <- elemPos) ts += e
-      for (cst <- cstsPos) ts += cst
-      for (e <- elemNeg) ts += SetFormula.mkCompl(e)
-      for (cst <- cstsNeg) ts += SetFormula.mkCompl(cst)
-      for (t <- other) {
-        val t1 = applyInternal(t)
-        if (t1 == SetFormula.Empty) return SetFormula.Empty
-        ts += t1
-      }
-      SetFormula.mkInterAll(ts.toList)
+    case SetFormula.Inter(l) => SetFormula.Inter(l.map(applyInternal))
 
     case SetFormula.Union(l) => SetFormula.Union(l.map(applyInternal))
 
