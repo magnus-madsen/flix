@@ -96,6 +96,9 @@ object Main {
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
       xnooptimizer = cmdOpts.xnooptimizer,
+      inlinerRounds = cmdOpts.inlinerRounds.getOrElse(Options.Default.inlinerRounds),
+      xnooptimizer1 = cmdOpts.xnooptimizer1,
+      inliner1Rounds = cmdOpts.inliner1Rounds.getOrElse(Options.Default.inliner1Rounds),
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
@@ -317,6 +320,9 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
+        case Command.InlinerExperiments =>
+          BenchmarkInliner.run(options)
+
       }
     }
 
@@ -349,6 +355,9 @@ object Main {
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xnooptimizer: Boolean = false,
+                     inlinerRounds: Option[Int] = None,
+                     xnooptimizer1: Boolean = false,
+                     inliner1Rounds: Option[Int] = None,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
@@ -401,6 +410,8 @@ object Main {
     case object CompilerPerf extends Command
 
     case object CompilerMemory extends Command
+
+    case object InlinerExperiments extends Command
 
   }
 
@@ -477,6 +488,9 @@ object Main {
           .text("number of compilations")
       ).hidden()
 
+      cmd("Xinliner").action((_, c) => c.copy(command = Command.InlinerExperiments))
+        .text("Runs experiments for the new inliner")
+
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
       note("")
@@ -508,6 +522,12 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Int]("inlinerRounds").action((n, c) => c.copy(inlinerRounds = Some(n))).
+        text("number of rounds of (old) inlining")
+
+      opt[Int]("inliner1Rounds").action((n, c) => c.copy(inliner1Rounds = Some(n))).
+        text("number of rounds of (new) inlining")
 
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")
@@ -553,6 +573,10 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
+
+      // Xno-optimizer1
+      opt[Unit]("Xno-optimizer1").action((_, c) => c.copy(xnooptimizer1 = true)).
+        text("[experimental] disables new compiler optimizations.")
 
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).

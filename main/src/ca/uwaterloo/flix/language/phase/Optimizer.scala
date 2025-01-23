@@ -34,7 +34,7 @@ object Optimizer {
       root
     } else {
       var result = root
-      for (_ <- 1 to 2) {
+      for (_ <- 1 to flix.options.inlinerRounds) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
         val afterInliner = Inliner.run(afterOccurrenceAnalyzer)
         result = afterInliner.unsafeGet
