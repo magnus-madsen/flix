@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, Reachability}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
@@ -869,6 +870,29 @@ class Flix {
           // Case 2: Empty path: skip it
           case (acc1, _) => acc1
         }
+    }
+  }
+
+  /**
+    * Temporary function for testing
+    */
+  def effectLockReachable(): Option[TypedAst.Root] = {
+    val (optRoot, errors) = check()
+    if (errors.isEmpty) {
+      // Mark this object as implicit.
+      implicit val flix: Flix = this
+
+      // Initialize fork-join thread pool.
+      initForkJoinPool()
+
+      val root = Reachability.run(optRoot.get)
+
+      shutdownForkJoinPool()
+
+      Some(root)
+
+    } else {
+      None
     }
   }
 

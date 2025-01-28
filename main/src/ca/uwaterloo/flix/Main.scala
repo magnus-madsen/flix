@@ -17,9 +17,11 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, Serialization}
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -317,6 +319,42 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
+        case Command.EffectLock =>
+          if (true) {
+            val input =
+              """
+                |def main(): Unit \ IO = println("a")
+                |
+                |pub def f(): Unit = ???
+                |
+                |""".stripMargin
+            implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+            implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addSourceCode("<test>", input)
+            val (optRoot, _) = flix.check()
+            val root = optRoot.get
+            val f = root.defs.filter(kv => kv._1.text == "f").toList.head
+            println(s"f: $f")
+            val tpe = f._2.spec.retTpe
+            println(s"return type: $tpe")
+            val ser = Serialization.serialize(tpe)
+            println(s"serialized return type: $ser")
+            assert(Serialization.deserialize(ser).get == tpe)
+          }
+          else {
+            flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                EffectLock.effectLock(cwd, bootstrap, flix)
+            }.toResult match {
+              case Result.Ok(_) =>
+                println("Ran Effect Lock")
+                System.exit(0)
+              case Result.Err(errors) =>
+                errors.map(_.message(formatter)).foreach(println)
+                System.exit(1)
+            }
+          }
       }
     }
 
@@ -402,6 +440,8 @@ object Main {
 
     case object CompilerMemory extends Command
 
+    case object EffectLock extends Command
+
   }
 
   /**
@@ -478,6 +518,8 @@ object Main {
       ).hidden()
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+
+      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
 
       note("")
 

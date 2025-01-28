@@ -19,5 +19,6 @@ import ca.uwaterloo.flix.api.lsp.LspSuite
 import org.scalatest.Suites
 
 class ApiSuite extends Suites(
-  new LspSuite
+  new LspSuite,
+  new EffectLockSuite
 )
