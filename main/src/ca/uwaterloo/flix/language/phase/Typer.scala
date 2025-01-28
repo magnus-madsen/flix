@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, InfResult, TypeContext}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, ConstraintSolverInterface, InfResult, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -195,7 +195,7 @@ object Typer {
     val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
-    val (subst, constraintErrors) = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+    val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
     TypeReconstruction.visitDef(defn, subst)
@@ -247,7 +247,7 @@ object Typer {
         val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
         val infResult = InfResult(constrs, tpe, eff, renv)
-        val (subst, constraintErrors) = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+        val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
         TypeReconstruction.visitSig(sig, subst)
     }

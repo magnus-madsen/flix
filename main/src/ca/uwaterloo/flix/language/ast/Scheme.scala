@@ -170,8 +170,8 @@ object Scheme {
     }
 
     // Add sc2's constraints to the environment
-    val eenv = ConstraintSolver.expandEqualityEnv(eenv0, econstrs2)
-    val cenv = ConstraintSolver.expandTraitEnv(tenv0, cconstrs2)
+    val eenv = ConstraintSolverInterface.expandEqualityEnv(eenv0, econstrs2)
+    val cenv = ConstraintSolverInterface.expandTraitEnv(tenv0, cconstrs2)
 
     // Mark all the constraints from sc2 as rigid
     val tvars = cconstrs2.flatMap(_.arg.typeVars) ++
