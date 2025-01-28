@@ -44,9 +44,7 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
     * Returns the rigidity of the given `sym` according to this environment.
     */
   def get(sym: Symbol.KindedTypeVarSym)(implicit scope: Scope): Rigidity = {
-    // TODO LEVELS use scope
-//    if (s.contains(sym) || sym.scope.isOutside(scope)) {
-    if (s.contains(sym)) {
+    if (s.contains(sym) || sym.scope.isOutside(scope)) {
       Rigidity.Rigid
     } else {
       Rigidity.Flexible

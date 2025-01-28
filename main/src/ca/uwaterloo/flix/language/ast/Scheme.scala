@@ -19,12 +19,11 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint, TypeReduction}
+import ca.uwaterloo.flix.language.phase.typer.*
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint2.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, TraitEnv}
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Scheme {
 
@@ -153,24 +152,20 @@ object Scheme {
 
     // Resolve what we can from the new econstrs
     // TODO ASSOC-TYPES probably these should be narrow from the start
-    val tconstrs2_0 = econstrs2_0.map { case BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
-    val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(scope, tenv0, eenv0, flix) match {
-      case Result.Ok(ResolutionResult(newSubst, newConstrs, _)) =>
-        (newSubst, newConstrs)
-      case _ => throw InternalCompilerException("unexpected inconsistent type constraints", SourceLocation.Unknown)
-    }
+    val tconstrs2_0 = econstrs2_0.map { case BroadEqualityConstraint(t1, t2) => TypeConstraint2.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown), SourceLocation.Unknown) }
+    val (econstrs2_1, subst) = ConstraintSolver2.solveAllTypes(tconstrs2_0)(scope, RigidityEnv.empty, eenv0, flix)
 
     // Anything we didn't solve must be a standard equality constraint
     // Apply the substitution to the new scheme 2
     val econstrs2 = econstrs2_1.map {
-      case TypeConstraint.Equality(t1, t2, prov) => EqualityEnvironment.narrow(BroadEqualityConstraint(subst(t1), subst(t2)))
+      case TypeConstraint2.Equality(t1, t2, _, _) => EqualityEnvironment.narrow(BroadEqualityConstraint(subst(t1), subst(t2)))
       case _ => throw InternalCompilerException("unexpected constraint", SourceLocation.Unknown)
     }
     val tpe2 = subst(tpe2_0)
     val cconstrs2 = cconstrs2_0.map {
       case TraitConstraint(head, arg, loc) =>
         // should never fail
-        val (t, _) = TypeReduction.simplify(subst(arg), RigidityEnv.empty, loc)(scope, eenv0, flix).unsafeGet
+        val t = TypeReduction2.reduce(subst(arg), scope, RigidityEnv.empty)(Progress(), eenv0, flix)
         TraitConstraint(head, t, loc)
     }
 
@@ -186,13 +181,13 @@ object Scheme {
 
     // Check that the constraints from sc1 hold
     // And that the bases unify
-    val cconstrs = sc1.tconstrs.map { case TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc) }
-    val econstrs = sc1.econstrs.map { case BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
-    val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
-    ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(scope, cenv, eenv, flix) match {
+    val cconstrs = sc1.tconstrs.map { case TraitConstraint(head, arg, loc) => TypeConstraint2.Trait(head.sym, arg, loc) }
+    val econstrs = sc1.econstrs.map { case BroadEqualityConstraint(t1, t2) => TypeConstraint2.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown), SourceLocation.Unknown) }
+    val baseConstr = TypeConstraint2.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown), SourceLocation.Unknown)
+    ConstraintSolver2.solveAll(baseConstr :: cconstrs ::: econstrs, SubstitutionTree.shallow(subst))(scope, renv, cenv, eenv, flix) match {
       // We succeed only if there are no leftover constraints
-      case Result.Ok(ResolutionResult(_, Nil, _)) => true
-      case _ => false
+      case (Nil, _) => true
+      case (_ :: _, _) => false
     }
 
   }
