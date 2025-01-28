@@ -25,6 +25,7 @@ import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
 import java.nio.file.Path
+import java.util.UUID
 
 object CompilerPerf {
 
