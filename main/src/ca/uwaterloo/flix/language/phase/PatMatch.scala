@@ -84,24 +84,31 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (Root, List[NonExhaustiveMatchError]) =
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[NonExhaustiveMatchError]) =
     flix.phaseNew("PatMatch") {
       implicit val r: TypedAst.Root = root
       implicit val sctx: SharedContext = SharedContext.mk()
 
-      val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
-      ParOps.parMap(classDefExprs)(visitExp)
+      val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+      val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
 
-      ParOps.parMap(root.defs.values)(visitDef)
-      ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef)
-      // Only need to check sigs with implementations
-      root.sigs.values.flatMap(_.exp).foreach(visitExp)
-
-      (root, sctx.errors.asScala.toList)
+      (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
     }
 
-  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
+  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
     visitExp(defn.exp)
+    defn
+  }
+
+  private def visitTrait(trt: TypedAst.Trait)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Trait = {
+    trt.sigs.flatMap(_.exp).foreach(visitExp)
+    trt
+  }
+
+  private def visitInstance(inst: TypedAst.Instance)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Instance = {
+    inst.defs.foreach(visitDef)
+    inst
   }
 
   /**
