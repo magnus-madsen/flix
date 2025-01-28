@@ -564,13 +564,12 @@ object ConstraintSolver2 {
     * }}}
     */
   // (varU)
-  // TODO CONSTR-SOLVER-2 make private
-  def makeSubstitution(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint2], SubstitutionTree) = constr match {
-    case TypeConstraint2.Equality(Type.Var(sym, _), tpe2, _, _) if !renv.isRigid(sym) && sym.kind == tpe2.kind =>
+  private def makeSubstitution(constr: TypeConstraint2, progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint2], SubstitutionTree) = constr match {
+    case TypeConstraint2.Equality(Type.Var(sym, _), tpe2, prov, loc) if canSubstitute(sym, tpe2) =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
 
-    case TypeConstraint2.Equality(tpe1, Type.Var(sym, _), _, _) if !renv.isRigid(sym) && tpe1.kind == sym.kind =>
+    case TypeConstraint2.Equality(tpe1, Type.Var(sym, _), prov, loc) if canSubstitute(sym, tpe1) =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe1))
 
@@ -583,6 +582,29 @@ object ConstraintSolver2 {
       val c = TypeConstraint2.Purification(sym, eff1, eff2, cs, loc)
       val tree = SubstitutionTree.oneBranch(sym, branch)
       (List(c), tree)
+  }
+
+  /**
+    * Returns true if it is valid to create a substitution from the given type variable to the given type.
+    */
+  private def canSubstitute(sym: Symbol.KindedTypeVarSym, tpe: Type)(implicit scope: Scope, renv: RigidityEnv): Boolean = {
+    renv.isFlexible(sym) &&
+      sym.kind == tpe.kind &&
+      hasIdempotentSubstitution(sym.kind) &&
+      !tpe.typeVars.exists { tvar => tvar.sym == sym } &&
+      !Type.hasJvmType(tpe)
+  }
+
+  /**
+    * Returns true if substitutions over the given kind are idempotent.
+    *
+    * This means that the substitution can be applied multiple times to a type without changing the result.
+    */
+  private def hasIdempotentSubstitution(k: Kind) = k match {
+    case Kind.Eff => false
+    case Kind.Bool => false
+    case Kind.CaseSet(_) => false
+    case _ => true
   }
 
   /**
