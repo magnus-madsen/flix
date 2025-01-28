@@ -145,13 +145,6 @@ object ConstraintSolver2 {
 
   }
 
-  object Soup {
-    /**
-      * Creates a new [[Soup]] from the given constraints.
-      */
-    def of(constrs: List[TypeConstraint2]): Soup = new Soup(constrs, SubstitutionTree.empty)
-  }
-
   /**
     * Unifies the given type fully, reducing all generated constraints.
     *
