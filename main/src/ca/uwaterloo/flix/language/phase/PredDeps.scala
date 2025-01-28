@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -38,15 +38,16 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): (Root, List[CompilationMessage]) = flix.phaseNew("PredDeps") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[CompilationMessage]) = flix.phaseNew("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     implicit val sctx: SharedContext = SharedContext.mk()
-    ParOps.parMapValues(root.defs)(visitDef)
-    ParOps.parMapValues(root.traits)(visitTrait)
-    ParOps.parMapValueList(root.instances)(visitInstance)
+
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
 
     val g = LabelledPrecedenceGraph(sctx.edges.asScala.toVector)
-    (root.copy(precedenceGraph = g), List.empty)
+    (root.copy(defs = defs, traits = traits, instances = instances, precedenceGraph = g), List.empty)
   }
 
   private def visitDef(defn: Def)(implicit sctx: SharedContext): Def = {
@@ -60,8 +61,10 @@ object PredDeps {
     trt
   }
 
-  private def visitInstance(inst: Instance)(implicit sctx: SharedContext): Unit =
+  private def visitInstance(inst: Instance)(implicit sctx: SharedContext): Instance = {
     inst.defs.foreach(visitDef)
+    inst
+  }
 
   private def visitSig(sig: Sig)(implicit sctx: SharedContext): Unit =
     sig.exp.foreach(visitExp)
