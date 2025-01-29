@@ -939,6 +939,7 @@ object Monomorpher {
     case Kind.Wild => Type.mkAnyType(tpe0.loc)
     case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
     case Kind.Star => Type.mkAnyType(tpe0.loc)
+    case Kind.Region => Type.mkAnyType(tpe0.loc)
     case Kind.Eff =>
       // If an effect variable is free, we may assume its Pure due to the subst. lemma.
       Type.Pure

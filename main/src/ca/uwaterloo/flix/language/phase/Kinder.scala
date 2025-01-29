@@ -112,8 +112,8 @@ object Kinder {
       }
       val kenv1 = getKindEnvFromTypeParams(tparams1.init)
       val kenv2 = getKindEnvFromRegion(tparams1.last)
-      // The last add is simply to verify that the last tparam was marked as Eff
-      val kenv = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
+      // The last add is simply to verify that the last tparam was marked as Region
+      val kenv = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Region)
       val tparams = tparams1.map(visitTypeParam(_, kenv))
       val fields = fields0.map(visitStructField(_, kenv, taenv, root))
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
@@ -1465,12 +1465,12 @@ object Kinder {
   }
 
   /**
-    * Gets a kind environment from the type param, defaulting to `Kind.Eff` if it is unspecified
+    * Gets a kind environment from the type param, defaulting to `Kind.Region` if it is unspecified
     */
   private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam): KindEnv = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, sym, kind, _) => KindEnv.singleton(sym -> kind)
-    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
-    case ResolvedAst.TypeParam.Implicit(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
+    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Region)
+    case ResolvedAst.TypeParam.Implicit(_, sym, _) => KindEnv.singleton(sym -> Kind.Region)
   }
 
   /**
@@ -1507,7 +1507,6 @@ object Kinder {
       // tparams default to zero except for the region param
       val kenv1 = getKindEnvFromTypeParams(tparams0.init)
       val kenv2 = getKindEnvFromRegion(tparams0.last)
-      // The last add is simply to verify that the last tparam was marked as Eff
       val kenv = KindEnv.disjointAppend(kenv1, kenv2)
       tparams0.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc

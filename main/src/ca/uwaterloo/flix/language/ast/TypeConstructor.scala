@@ -287,7 +287,7 @@ object TypeConstructor {
     /**
       * The shape of an array is `Array[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Region ->: Kind.Star
   }
 
   /**
@@ -471,7 +471,17 @@ object TypeConstructor {
     /**
       * The shape of a star-kind region is Region[l].
       */
-    def kind: Kind = Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Region ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that converts a region to an Eff type.
+    */
+  case object RegionToEff extends TypeConstructor {
+    /**
+      * The shape of an effect-kind region is Heap[l].
+      */
+    def kind: Kind = Kind.Region ->: Kind.Eff
   }
 
   /**

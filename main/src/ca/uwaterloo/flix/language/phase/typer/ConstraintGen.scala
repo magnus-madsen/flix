@@ -1255,7 +1255,7 @@ object ConstraintGen {
   private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Type.Var) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
-    assert(struct.tparams.last.sym.kind == Kind.Eff)
+    assert(struct.tparams.last.sym.kind == Kind.Region)
     val fields = struct.fields
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)

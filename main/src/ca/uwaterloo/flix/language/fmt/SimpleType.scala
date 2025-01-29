@@ -99,6 +99,8 @@ object SimpleType {
 
   case object RegionToStar extends SimpleType
 
+  case object Heap extends SimpleType
+
   case object RegionWithoutRegion extends SimpleType
 
   //////////
@@ -625,6 +627,7 @@ object SimpleType {
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Region(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
+        case TypeConstructor.RegionToEff => mkApply(Heap, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_, _) => SimpleType.Error

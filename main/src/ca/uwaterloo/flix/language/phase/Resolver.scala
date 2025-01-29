@@ -62,7 +62,7 @@ object Resolver {
     "Bool" -> Kind.Bool,
     "Eff" -> Kind.Eff,
     "Type" -> Kind.Star,
-    "Region" -> Kind.Eff,
+    "Region" -> Kind.Region,
     "RecordRow" -> Kind.RecordRow,
     "SchemaRow" -> Kind.SchemaRow,
     "Predicate" -> Kind.Predicate
@@ -2362,6 +2362,7 @@ object Resolver {
         case "Array" => Validation.Success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
+        case "Heap" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff, loc))
 
         // Disambiguate type.
         case _ => // typeName

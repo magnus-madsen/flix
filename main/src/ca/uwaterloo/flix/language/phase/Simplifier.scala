@@ -341,6 +341,9 @@ object Simplifier {
             // Remove the type argument.
             MonoType.Region
 
+          case TypeConstructor.RegionToEff =>
+            MonoType.Unit
+
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
             MonoType.Tuple(targs.map(visitType))
@@ -505,6 +508,9 @@ object Simplifier {
           case TypeConstructor.RegionToStar =>
             // Remove the type argument.
             Type.Cst(TypeConstructor.RegionWithoutRegion, loc)
+
+          case TypeConstructor.RegionToEff =>
+            Type.mkUnit(loc)
 
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments

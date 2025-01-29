@@ -87,6 +87,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.CaseSet(syms, _) => DocAst.Type.CaseSet(syms)
     case TypeConstructor.Region(sym) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.RegionToStar => DocAst.Type.AsIs("Region")
+    case TypeConstructor.RegionToEff => DocAst.Type.AsIs("Heap")
     case TypeConstructor.RegionWithoutRegion => DocAst.Type.AsIs("RegionWithoutRegion")
     case TypeConstructor.Error(_, _) => DocAst.Type.Error
   }

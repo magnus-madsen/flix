@@ -776,6 +776,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.Region(_) => true
     case TypeConstructor.RegionToStar => true
+    case TypeConstructor.RegionToEff => true
 
     // invisible
     case TypeConstructor.AnyType => false
