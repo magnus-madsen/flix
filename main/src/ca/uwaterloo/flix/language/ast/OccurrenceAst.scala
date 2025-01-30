@@ -130,6 +130,8 @@ object OccurrenceAst {
       * Represents a variable that we explicitly do not want to inline.
       */
     case object DontInline extends Occur
+
+    case object Dangerous extends Occur
   }
 
   /**
