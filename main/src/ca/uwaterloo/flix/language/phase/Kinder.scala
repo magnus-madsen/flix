@@ -218,7 +218,7 @@ object Kinder {
           val sig = visitSig(sig0, tparam, kenv, taenv, root)
           sigSym -> sig
       }
-      val laws = laws0.map(visitDef(_, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
+      val laws = laws0.map(visitDef(_, Nil, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
       KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
   }
 
@@ -233,7 +233,7 @@ object Kinder {
       val t = visitType(tpe0, kind, kenv, taenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
       val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, taenv, root))
-      val defs = defs0.map(visitDef(_, kenv, taenv, root))
+      val defs = defs0.map(visitDef(_, tparams, kenv, taenv, root))
       KindedAst.Instance(doc, ann, mod, symUse, tparams, t, tconstrs, assocs, defs, ns, loc)
   }
 
@@ -250,18 +250,18 @@ object Kinder {
     * Performs kinding on the all the definitions in the given root.
     */
   private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, taenv, root)))
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, Nil, KindEnv.empty, taenv, root)))
   }
 
   /**
     * Performs kinding on the given def under the given kind environment.
     */
-  private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
+  private def visitDef(def0: ResolvedAst.Declaration.Def, instanceTparams: List[KindedAst.TypeParam], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       flix.subtask(sym.toString, sample = true)
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
-      val spec = visitSpec(spec0, Nil, kenv, taenv, root)
+      val spec = visitSpec(spec0, instanceTparams.map(_.sym), kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, henv, root)(Scope.Top, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }
