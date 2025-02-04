@@ -156,6 +156,7 @@ object Monomorpher {
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
       case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+      case Type.GetEff(_, _, loc) => throw InternalCompilerException("unexpected GetEff", loc)
     }
 
     /**
@@ -300,6 +301,7 @@ object Monomorpher {
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.GetEff(_, _, _) => throw InternalCompilerException(s"Unexpected GetEff '$rest'", rest.loc)
   }
 
   /**
@@ -321,6 +323,7 @@ object Monomorpher {
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.GetEff(_, _, _) => throw InternalCompilerException(s"Unexpected GetEff '$rest'", rest.loc)
   }
 
   /**
@@ -863,6 +866,7 @@ object Monomorpher {
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+    case Type.GetEff(_, _, loc) => throw InternalCompilerException("unexpected GetEff", loc)
   }
 
   /**

@@ -366,7 +366,13 @@ object SimpleType {
         case JvmMember.JvmField(_, tpe, name) => SimpleType.JvmUnresolvedField(visit(tpe), name.name)
         case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
-      case Type.GetEff(action, tpe, loc) => ??? // MATT
+      case Type.GetEff(action, tpe, _) =>
+        val name = action match {
+          case RegionAction.Alloc => "GetAlloc"
+          case RegionAction.Read => "GetRead"
+          case RegionAction.Write => "GetWrite"
+        }
+        Apply(SimpleType.Name(name), List(visit(tpe)))
 
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void

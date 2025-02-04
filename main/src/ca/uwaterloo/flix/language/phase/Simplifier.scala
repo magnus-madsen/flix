@@ -593,6 +593,7 @@ object Simplifier {
       case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.GetEff(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
     }
   }
 

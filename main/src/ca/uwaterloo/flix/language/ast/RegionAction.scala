@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 trait RegionAction
 
 object RegionAction {
-  case object Alloc
-  case object Read
-  case object Write
+  case object Alloc extends RegionAction
+  case object Read extends RegionAction
+  case object Write extends RegionAction
 }
