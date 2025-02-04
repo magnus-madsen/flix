@@ -157,6 +157,11 @@ object EffUnification3 {
       case Some(x) => SetFormula.Cst(x)
     }
 
+    case tpe@Type.Apply(Type.Cst(TypeConstructor.RegionToEff, _), _, _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound region: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.Cst(x)
+    }
+
     case tpe@Type.Cst(TypeConstructor.Error(_, _), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound error type: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.Var(x)
@@ -274,6 +279,7 @@ object EffUnification3 {
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         val symCmp = sym1.compare(sym2)
         if (symCmp != 0) symCmp else arg1.compare(arg2)
+      case (Atom.RegionToEff(arg1), Atom.RegionToEff(arg2)) => arg1.compare(arg2)
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
@@ -282,7 +288,8 @@ object EffUnification3 {
           case Atom.Region(_) => 2
           case Atom.Eff(_) => 3
           case Atom.Assoc(_, _) => 4
-          case Atom.Error(_) => 5
+          case Atom.RegionToEff(_) => 5
+          case Atom.Error(_) => 6
         }
 
         ordinal(this) - ordinal(that)
@@ -305,17 +312,20 @@ object EffUnification3 {
     /** Represents a region.  */
     case class Region(sym: Symbol.RegionSym) extends Atom
 
+    /** Represents a region converted to an effect. */
+    case class RegionToEff(arg: Atom) extends Atom
+
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
-    @tailrec
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
       case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff, _), tpe2, _) => Atom.RegionToEff(fromType(tpe2)) // MATT do we need to delegate like assocFromType?
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
       case _ => throw InvalidType
@@ -349,6 +359,7 @@ object EffUnification3 {
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
       case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
+      case regToEff@Type.Apply(Type.Cst(TypeConstructor.RegionToEff, _), _, _) => SortedSet.from(getRegionToEffAtoms(regToEff))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
       case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
@@ -367,6 +378,15 @@ object EffUnification3 {
       case _ => None
     }
 
+    // MATT docs and is this needed?
+    private def getRegionToEffAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
+      case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.VarRigid(sym))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff, _), arg, _) =>
+        getRegionToEffAtoms(arg).map(Atom.RegionToEff(_))
+      case Type.Alias(_, _, tpe, _) => getRegionToEffAtoms(tpe)
+      case _ => None
+    }
+
     /**
       * Returns the [[Type]] represented by `atom` with location `loc`. The kind of errors and
       * associated types are set to be [[Kind.Eff]].
@@ -374,6 +394,8 @@ object EffUnification3 {
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
       case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
+      case Atom.RegionToEff(arg0) =>
+        Type.Apply(Type.Cst(TypeConstructor.RegionToEff, loc), toType(arg0, loc), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
