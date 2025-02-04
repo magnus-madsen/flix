@@ -733,6 +733,9 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ visitType(arg)
 
+    case Type.GetEff(_, tpe, _) =>
+      visitType(tpe) // MATT should probably visit action
+
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Iterator.empty
     case _: Type.JvmToEff => Iterator.empty
