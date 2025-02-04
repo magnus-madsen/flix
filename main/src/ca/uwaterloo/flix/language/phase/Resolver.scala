@@ -255,6 +255,7 @@ object Resolver {
     case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
     case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
     case _: UnkindedType.UnappliedAssocType => Nil
+    case _: UnkindedType.UnappliedGetEff => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
@@ -268,6 +269,7 @@ object Resolver {
     case _: UnkindedType.Error => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
     case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
+    case getEff: UnkindedType.GetEff => throw InternalCompilerException("unexpected applied GetEff", getEff.loc)
   }
 
   /**
@@ -2363,6 +2365,9 @@ object Resolver {
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
         case "Heap" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff, loc))
+        case "GetAlloc" => Validation.Success(UnkindedType.UnappliedGetEff(RegionAction.Alloc, loc))
+        case "GetRead" => Validation.Success(UnkindedType.UnappliedGetEff(RegionAction.Read, loc))
+        case "GetWrite" => Validation.Success(UnkindedType.UnappliedGetEff(RegionAction.Write, loc))
 
         // Disambiguate type.
         case _ => // typeName
@@ -2612,6 +2617,17 @@ object Resolver {
             }
         }
 
+      case UnkindedType.UnappliedGetEff(action, loc) =>
+        targs match {
+          // Case 1: Applied to 1 argument. Hooray!
+          case hd0 :: Nil =>
+            mapN(finishResolveType(hd0, taenv)) {
+              case hd => UnkindedType.GetEff(action, hd, loc)
+            }
+
+          case _ => throw InternalCompilerException("bad type: " + tpe0, loc) // MATT proper error
+        }
+
       case _: UnkindedType.Var =>
         mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -2687,6 +2703,7 @@ object Resolver {
       case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
       case _: UnkindedType.AssocType => throw InternalCompilerException("unexpected resolved associated type", baseType.loc)
+      case _: UnkindedType.GetEff => throw InternalCompilerException("unexpected resolved GetEff", baseType.loc)
     }
   }
 

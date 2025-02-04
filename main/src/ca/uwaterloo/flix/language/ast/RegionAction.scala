@@ -16,7 +16,17 @@
 package ca.uwaterloo.flix.language.ast
 
 // MATT docs
-trait RegionAction
+sealed trait RegionAction extends Ordered[RegionAction] {
+  override def compare(that: RegionAction): Int = {
+    def ordinal(action: RegionAction): Int = action match {
+      case RegionAction.Alloc => 0
+      case RegionAction.Read => 1
+      case RegionAction.Write => 2
+    }
+
+    ordinal(this).compare(ordinal(that))
+  }
+}
 
 object RegionAction {
   case object Alloc extends RegionAction

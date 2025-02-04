@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, EqualityConstraint, Scope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, RegionAction, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
@@ -508,7 +508,7 @@ object ConstraintGen {
       case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Region, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
-        val regionEff = Type.mkRegionToEff(regionVar, loc)
+        val regionEff = Type.GetEff(RegionAction.Alloc, regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = regionType, actual = tpe, exp.loc)
@@ -523,7 +523,7 @@ object ConstraintGen {
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Region, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
-        val regionEff = Type.mkRegionToEff(regionVar, loc)
+        val regionEff = Type.GetEff(RegionAction.Alloc, regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         val (tpe3, eff3) = visitExp(exp3)
@@ -537,7 +537,7 @@ object ConstraintGen {
 
       case Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Region, loc)
-        val regionEff = Type.mkRegionToEff(regionVar, loc)
+        val regionEff = Type.GetEff(RegionAction.Read, regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
@@ -550,7 +550,7 @@ object ConstraintGen {
       case Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Region, loc)
-        val regionEff = Type.mkRegionToEff(regionVar, loc)
+        val regionEff = Type.GetEff(RegionAction.Write, regionVar, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
