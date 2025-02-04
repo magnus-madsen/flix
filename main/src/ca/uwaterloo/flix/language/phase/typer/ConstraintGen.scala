@@ -506,47 +506,51 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = Type.freshVar(Kind.Region, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
+        val regionEff = Type.mkRegionToEff(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = regionType, actual = tpe, exp.loc)
         c.unifyAllTypes(tpes, loc)
         val elmTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionEff, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = Type.freshVar(Kind.Region, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
+        val regionEff = Type.mkRegionToEff(regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         val (tpe3, eff3) = visitExp(exp3)
         c.expectType(expected = regionType, actual = tpe1, loc)
         c.expectType(expected = Type.Int32, actual = tpe3, exp3.loc)
         c.unifyType(tvar, Type.mkArray(tpe2, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, eff3, regionVar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(eff1, eff2, eff3, regionEff, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = Type.freshVar(Kind.Region, loc)
+        val regionEff = Type.mkRegionToEff(regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, eff1, eff2, loc), loc)
+        c.unifyType(evar, Type.mkUnion(regionEff, eff1, eff2, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = Type.freshVar(Kind.Region, loc)
+        val regionEff = Type.mkRegionToEff(regionVar, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -554,7 +558,7 @@ object ConstraintGen {
         c.expectType(expected = arrayType, actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
         c.expectType(expected = elmVar, actual = tpe3, exp3.loc)
-        c.unifyType(evar, Type.mkUnion(regionVar, eff1, eff2, eff3, loc), loc)
+        c.unifyType(evar, Type.mkUnion(regionEff, eff1, eff2, eff3, loc), loc)
         val resTpe = Type.Unit
         val resEff = evar
         (resTpe, resEff)

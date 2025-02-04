@@ -1198,6 +1198,12 @@ object Type {
     Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
 
   /**
+    * Returns a Region effect for the given region argument `r` with the given source location `loc`.
+    */
+  def mkRegionToEff(r: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Cst(TypeConstructor.RegionToEff, loc), r, loc)
+
+  /**
     * Returns a region type with the given symbol.
     */
   def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
