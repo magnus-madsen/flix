@@ -36,7 +36,7 @@ object InstanceCompleter {
     def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
       implicit val scope: Scope = Scope.Top
       tpe match {
-        case Type.Var(sym, loc) if oldSym == sym =>Type.Var(sym.withText(VarText.SourceText(newText)), loc)
+        case Type.Var(sym, loc) if oldSym == sym => Type.Var(sym.withText(VarText.SourceText(newText)), loc)
         case Type.Var(_, _) => tpe
         case Type.Cst(_, _) => tpe
 
@@ -61,6 +61,10 @@ object InstanceCompleter {
             val args = args0.map(replaceText(oldSym, _, newText))
             Type.AssocType(cst, args, kind, loc)
           }
+
+        case Type.GetEff(action, t0, loc) =>
+          val t = replaceText(oldSym, t0, newText)
+          Type.GetEff(action, t, loc)
 
         // Jvm types should not be exposed to the user.
         case t: Type.JvmToType => t
