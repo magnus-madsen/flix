@@ -62,6 +62,8 @@ sealed trait Type {
     case Type.JvmToEff(tpe, _) => tpe.typeVars
 
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
+
+    case Type.GetEff(_, tpe, _) => tpe.typeVars
   }
 
   /**
@@ -81,6 +83,8 @@ sealed trait Type {
     case Type.JvmToEff(tpe, _) => tpe.effects
 
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
+
+    case Type.GetEff(_, tpe, _) => tpe.effects
   }
 
   /**
@@ -99,6 +103,8 @@ sealed trait Type {
     case Type.JvmToType(tpe, _) => tpe.cases
     case Type.JvmToEff(tpe, _) => tpe.cases
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
+
+    case Type.GetEff(_, tpe, _) => tpe.cases
   }
 
   /**
@@ -130,6 +136,7 @@ sealed trait Type {
     case Type.JvmToType(_, _) => None
     case Type.JvmToEff(_, _) => None
     case Type.UnresolvedJvmType(_, _) => None
+    case Type.GetEff(_, _, _) => None
   }
 
   /**
@@ -160,6 +167,7 @@ sealed trait Type {
     case Type.JvmToType(_, _) => Nil
     case Type.JvmToEff(_, _) => Nil
     case Type.UnresolvedJvmType(_, _) => Nil
+    case Type.GetEff(_, _, _) => Nil
   }
 
   /**
@@ -214,6 +222,9 @@ sealed trait Type {
 
     case Type.UnresolvedJvmType(member, loc) =>
       Type.UnresolvedJvmType(member.map(t => t.map(f)), loc)
+
+    case Type.GetEff(action, tpe, loc) =>
+      Type.GetEff(action, tpe.map(f), loc)
   }
 
   /**
@@ -604,6 +615,11 @@ object Type {
     */
   case class UnresolvedJvmType(member: JvmMember, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
+  }
+
+  // MATT docs
+  case class GetEff(action: RegionAction, tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Eff
   }
 
   /**
