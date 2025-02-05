@@ -461,7 +461,7 @@ object TypeConstructor {
     * A type constructor that represents a region.
     */
   case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
-    def kind: Kind = Kind.Eff
+    def kind: Kind = Kind.Region
   }
 
   /**

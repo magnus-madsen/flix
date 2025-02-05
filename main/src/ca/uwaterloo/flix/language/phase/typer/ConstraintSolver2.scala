@@ -93,6 +93,11 @@ object ConstraintSolver2 {
       }
     }
 
+    def recordGraph(label: String = ""): Soup = {
+      Debug.recordGraph(constrs, tree, label)
+      this
+    }
+
     /**
       * Creates a new [[Soup]], but reuses this one if the arguments are the same.
       */
@@ -158,6 +163,7 @@ object ConstraintSolver2 {
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
+            .recordGraph("after breakDownConstraints")
             .flatMap(eliminateIdentities(_, progress))
             .map(reduceTypes(_, progress))
             .flatMapSubst(makeSubstitution(_, progress))
@@ -175,6 +181,7 @@ object ConstraintSolver2 {
             .flatMapSubst(schemaUnification(_, progress))
             .map(purifyEmptyRegion(_, progress))
       }
+      .recordGraph("before BlockEffectUnification")
       .blockApply(blockEffectUnification(_, progress))
       .flatMapSubst(caseSetUnification(_, progress))
       .flatMapSubst(booleanUnification(_, progress))

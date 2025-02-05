@@ -395,6 +395,7 @@ object EffUnification3 {
         getNestedAtoms(arg).map(Atom.RegionToEff(_))
       case Type.GetEff(action, tpe, _) =>
         getNestedAtoms(tpe).map(Atom.GetEff(action, _))
+      case Type.Cst(TypeConstructor.Region(sym), _) => Some(Atom.Region(sym))
       case _ => None
     }
 
