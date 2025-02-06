@@ -157,14 +157,15 @@ object TypeReduction2 {
 
     case Type.GetEff(action, tpe, loc) =>
       reduce(tpe, scope, renv) match {
-        case Type.Cst(TypeConstructor.Region(sym), _) => getEff(action, sym, loc)
+        case t@Type.Cst(TypeConstructor.Region(sym), _) => getEff(action, sym.prop, t, loc)
+        case t@Type.Cst(TypeConstructor.GenericRegion(prop), _) => getEff(action, prop, t, loc)
         case t => Type.GetEff(action, t, loc)
       }
   }
 
   // MATT docs
-  private def getEff(action: RegionAction, sym: Symbol.RegionSym, loc: SourceLocation): Type = (action, sym.prop) match {
-    case (_, RegionProperty.Default) => Type.mkRegionToEff(Type.Cst(TypeConstructor.Region(sym), loc), loc)
+  private def getEff(action: RegionAction, prop: RegionProperty, reg: Type, loc: SourceLocation): Type = (action, prop) match {
+    case (_, RegionProperty.Default) => Type.mkRegionToEff(reg, loc)
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */

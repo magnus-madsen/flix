@@ -637,6 +637,7 @@ object SimpleType {
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionToEff => mkApply(Heap, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
+        case TypeConstructor.GenericRegion(prop) => mkApply(SimpleType.Name("GenericRegion"), t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_, _) => SimpleType.Error
       }

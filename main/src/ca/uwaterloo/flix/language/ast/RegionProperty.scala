@@ -16,7 +16,17 @@
 package ca.uwaterloo.flix.language.ast
 
 // MATT docs
-sealed trait RegionProperty
+sealed trait RegionProperty extends Ordered[RegionProperty] {
+  override def compare(that: RegionProperty): Int = (this, that) match {
+    case (RegionProperty.Default, RegionProperty.Default) => 0
+    case _ =>
+      def ordinal(x: RegionProperty): Int = x match {
+        case RegionProperty.Default => 0
+      }
+
+      ordinal(this).compare(ordinal(that))
+  }
+}
 
 object RegionProperty {
   case object Default extends RegionProperty

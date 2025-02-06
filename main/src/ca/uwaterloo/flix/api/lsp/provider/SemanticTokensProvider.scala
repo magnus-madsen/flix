@@ -814,6 +814,7 @@ object SemanticTokensProvider {
     case TypeConstructor.ArrowWithoutEffect(_) => false
     case TypeConstructor.ArrayWithoutRegion => false
     case TypeConstructor.RegionWithoutRegion => false
+    case TypeConstructor.GenericRegion(_) => false
   }
 
   /**

@@ -420,6 +420,9 @@ object Simplifier {
 
           case TypeConstructor.RegionWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.GenericRegion(prop) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
   }
@@ -585,6 +588,9 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.RegionWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.GenericRegion(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
 
