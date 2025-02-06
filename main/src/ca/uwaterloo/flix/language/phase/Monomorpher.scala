@@ -153,10 +153,15 @@ object Monomorpher {
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, eqEnv, isGround = true)
 
+      case Type.GetEff(action, tpe, loc) =>
+        val t = apply(tpe)
+        val reducedType = TypeReduction2.reduce(Type.GetEff(action, t, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
+        // `reducedType` is ground, but might need normalization.
+        simplify(reducedType, eqEnv, isGround = true)
+
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
       case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
-      case Type.GetEff(_, _, loc) => throw InternalCompilerException("unexpected GetEff", loc)
     }
 
     /**
@@ -863,10 +868,14 @@ object Monomorpher {
       val arg = simplify(arg0, eqEnv, isGround)
       val t = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
       simplify(t, eqEnv, isGround)
+    case Type.GetEff(action, tpe0, loc) =>
+      val t = simplify(tpe0, eqEnv, isGround)
+      val t1 = TypeReduction2.reduce(Type.GetEff(action, t, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
+//      simplify(t1, eqEnv, isGround)
+      ??? // MATT this gets into a loop because we cannot reduce GetEff any more because we replaced the region with IO
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
-    case Type.GetEff(_, _, loc) => throw InternalCompilerException("unexpected GetEff", loc)
   }
 
   /**
