@@ -501,6 +501,14 @@ object TypeConstructor {
   }
 
   /**
+    * A region after monomorphization is reduced to its property.
+    */
+  @IntroducedBy(Monomorpher.getClass)
+  case class GenericRegion(property: RegionProperty) extends TypeConstructor {
+    def kind: Kind = Kind.Region
+  }
+
+  /**
     * A type constructor which represents an erroneous type of the given `kind`.
     */
   case class Error(id: Int, kind: Kind) extends TypeConstructor
