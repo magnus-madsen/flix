@@ -675,6 +675,35 @@ object Weeder2 {
       }
     }
 
+    private def pickRegionTagOpt(tree: Tree)(implicit sctx: SharedContext): Option[RegionProperty] = {
+      val optTag = tryPick(TreeKind.RegionTag, tree)
+      optTag.map {
+        case tree =>
+          val tokens = pickAllTokens(tree)
+          visitRegionTag
+      }
+      val ann = optTag.map(
+          tree => {
+            val tokens = pickAllTokens(tree)
+            // Check for duplicate annotations
+            val errors = getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
+              val name = pair._1.text
+              val loc1 = pair._1.mkSourceLocation()
+              val loc2 = pair._2.mkSourceLocation()
+              DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
+            })
+            errors.foreach(sctx.errors.add)
+            tokens.toList.map(visitAnnotation)
+          })
+        .getOrElse(List.empty)
+
+      Annotations(ann)
+    }
+
+    private def visitRegionTag(token: Token)(implicit sctx: SharedContext): Annotation = {
+
+    }
+
     private def pickEqualityConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[EqualityConstraint], CompilationMessage] = {
       val maybeConstraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree)
       val constraints = traverseOpt(maybeConstraintList)(t => {

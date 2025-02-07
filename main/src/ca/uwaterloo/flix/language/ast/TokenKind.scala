@@ -1085,6 +1085,8 @@ object TokenKind {
 
   case object Plus extends TokenKind
 
+  case object RegionTag extends TokenKind
+
   case object Semi extends TokenKind
 
   case object SetHash extends TokenKind
