@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, RegionProperty, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -675,33 +675,22 @@ object Weeder2 {
       }
     }
 
-    private def pickRegionTagOpt(tree: Tree)(implicit sctx: SharedContext): Option[RegionProperty] = {
+    // MATT docs
+    def pickRegionTagOpt(tree: Tree)(implicit sctx: SharedContext): Option[RegionProperty] = {
       val optTag = tryPick(TreeKind.RegionTag, tree)
-      optTag.map {
-        case tree =>
-          val tokens = pickAllTokens(tree)
-          visitRegionTag
-      }
-      val ann = optTag.map(
-          tree => {
-            val tokens = pickAllTokens(tree)
-            // Check for duplicate annotations
-            val errors = getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
-              val name = pair._1.text
-              val loc1 = pair._1.mkSourceLocation()
-              val loc2 = pair._2.mkSourceLocation()
-              DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
-            })
-            errors.foreach(sctx.errors.add)
-            tokens.toList.map(visitAnnotation)
-          })
-        .getOrElse(List.empty)
-
-      Annotations(ann)
+      optTag.flatMap(tokenToRegionTag)
     }
 
-    private def visitRegionTag(token: Token)(implicit sctx: SharedContext): Annotation = {
-
+    // MATT docs
+    private def tokenToRegionTag(tree: Tree)(implicit sctx: SharedContext): Option[RegionProperty] = {
+      tree.children.headOption.collect {
+        case token: Token =>
+          token.text match {
+            case "%default" => RegionProperty.Default
+            case _ => None // MATT add error
+          }
+        case _ => None
+      }
     }
 
     private def pickEqualityConstraints(tree: Tree)(implicit sctx: SharedContext): Validation[List[EqualityConstraint], CompilationMessage] = {
@@ -1345,8 +1334,9 @@ object Weeder2 {
     private def visitScopeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Scope)
       val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlockExpr)
+      val prop = Decls.pickRegionTagOpt(tree)
       mapN(pickNameIdent(tree), block) {
-        (ident, block) => Expr.Scope(ident, block, tree.loc)
+        (ident, block) => Expr.Scope(prop, ident, block, tree.loc)
       }
     }
 
