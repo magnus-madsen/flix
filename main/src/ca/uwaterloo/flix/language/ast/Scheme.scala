@@ -160,7 +160,7 @@ object Scheme {
     val cconstrs2 = cconstrs2_0.map {
       case TraitConstraint(head, arg, loc) =>
         // should never fail
-        val t = TypeReduction2.reduce(subst(arg), scope, RigidityEnv.empty)(Progress(), eenv0, flix)
+        val t = TypeReduction.reduce(subst(arg), scope, RigidityEnv.empty)(Progress(), eenv0, flix)
         TraitConstraint(head, t, loc)
     }
 

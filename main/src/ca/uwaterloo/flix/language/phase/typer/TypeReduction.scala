@@ -22,12 +22,11 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
-import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-object TypeReduction2 {
+object TypeReduction {
 
   /**
     * Performs various reduction rules on the given type.
@@ -37,14 +36,11 @@ object TypeReduction2 {
 
     case t: Type.Cst => t
 
-    case Type.Apply(tpe1, tpe2, loc) =>
+    case app@Type.Apply(tpe1, tpe2, loc) =>
       val t1 = reduce(tpe1, scope, renv)
       val t2 = reduce(tpe2, scope, renv)
       // Performance: Reuse this, if possible.
-      if ((t1 eq tpe1) && (t2 eq tpe2))
-        tpe0
-      else
-        Type.Apply(t1, t2, loc)
+      app.renew(t1, t2, loc)
 
     case Type.Alias(_, _, tpe, _) => tpe
 
@@ -58,12 +54,10 @@ object TypeReduction2 {
       val matches = assocOpt.flatMap {
         case AssocTypeDef(tparams, assocTpe0, ret0) =>
 
-
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
           val assocRenv = t.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
-
 
           // Refresh the flexible variables in the instance
           // (variables may be rigid if the instance comes from a constraint on the definition)
@@ -74,7 +68,6 @@ object TypeReduction2 {
           val assocTpe = assocSubst(assocTpe0)
           val ret = assocSubst(ret0)
 
-          // Instantiate all the instance constraints according to the substitution.
           ConstraintSolver2.fullyUnify(t, assocTpe, scope, assocRenv).map {
             case subst => subst(ret)
           }
@@ -222,7 +215,7 @@ object TypeReduction2 {
     */
   private def usesBoxing(args: List[Class[?]], params: Array[Class[?]]): Boolean = {
     // This method is checking an existing match, so zip is fine.
-    args.zip(params).exists{
+    args.zip(params).exists {
       // Primitive type boxing.
       case (clazz, java.lang.Boolean.TYPE) if clazz != java.lang.Boolean.TYPE => true
       case (clazz, java.lang.Byte.TYPE) if clazz != java.lang.Byte.TYPE => true
