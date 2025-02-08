@@ -166,15 +166,31 @@ object RestrictableChooseConstraintGen {
               val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
               val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
               val potentiallyStable = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic) })
+              val freeVarsLimit = 6
 
               // φ_out :> (φ_in ∩ potentiallyStable) ∪ intros
+              // but if the number of free variables in a formula is greater than or equal to the freeVarsLimit,
+              // then subtyping check is split based on the premise that if x :> y and x :> z then x :> y ∪ z.
+              // Thus check that for each intro in intros is true that φ_out :> intro
+              // and for each ps in potentiallyStable: φ_out :> φ_in ∩ ps.
               val set = Type.mkCaseUnion(
                 Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
                 intros,
                 enumSym,
                 loc
               )
-              unifySubset(set, indexOutVar, enumSym, loc)
+              if (set.typeVars.size < freeVarsLimit) {
+                unifySubset(set, indexOutVar, enumSym, loc)
+              }
+              else {
+                indicesAndTags.foreach {
+                  case (i, tag) =>
+                    val potentiallyStable = Type.mkCaseIntersection(indexInVar, Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic), enumSym, loc)
+                    val intro = Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic)
+                    unifySubset(intro, indexOutVar, enumSym, loc)
+                    unifySubset(potentiallyStable, indexOutVar, enumSym, loc)
+                }
+              }
 
               // τ_out
               c.unifyType(enumTypeOut, tpe0, loc)
