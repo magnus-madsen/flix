@@ -39,6 +39,28 @@ def charAt05(): Bool = String.charAt(4, "Hello World!") == 'o'
 def charAt06(): Bool = String.charAt(5, "Hello World!") == ' '
 
 /////////////////////////////////////////////////////////////////////////////
+// Indexable                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def index01(): Bool = OutOfBounds.asRes(() -> "Hello World!"[0])() == Ok('H')
+
+@test
+def index02(): Bool = OutOfBounds.asRes(() -> "Hello World!"[1]) == Ok('e')
+
+@test
+def index03(): Bool = OutOfBounds.asRes(() -> "Hello World!"[2]) == Ok('l')
+
+@test
+def index04(): Bool = OutOfBounds.asRes(() -> "Hello World!"[3]) == Ok('l')
+
+@test
+def index05(): Bool = OutOfBounds.asRes(() -> "Hello World!"[4]) == Ok('o')
+
+@test
+def index06(): Bool = OutOfBounds.asRes(() -> "Hello World!"[5]) == Ok(' ')
+
+/////////////////////////////////////////////////////////////////////////////
 // nth                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
