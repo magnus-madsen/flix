@@ -687,6 +687,8 @@ object Weeder2 {
         case token: Token =>
           token.text match {
             case "%default" => Some(RegionProperty.Default)
+            case "%lofi" => Some(RegionProperty.LowFidelity)
+            case "%shared" => Some(RegionProperty.Shared)
             case _ => None // MATT add error
           }
         case _ => None

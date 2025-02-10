@@ -19,9 +19,13 @@ package ca.uwaterloo.flix.language.ast
 sealed trait RegionProperty extends Ordered[RegionProperty] {
   override def compare(that: RegionProperty): Int = (this, that) match {
     case (RegionProperty.Default, RegionProperty.Default) => 0
+    case (RegionProperty.LowFidelity, RegionProperty.LowFidelity) => 0
+    case (RegionProperty.Shared, RegionProperty.Shared) => 0
     case _ =>
       def ordinal(x: RegionProperty): Int = x match {
         case RegionProperty.Default => 0
+        case RegionProperty.LowFidelity => 1
+        case RegionProperty.Shared => 2
       }
 
       ordinal(this).compare(ordinal(that))
@@ -30,4 +34,6 @@ sealed trait RegionProperty extends Ordered[RegionProperty] {
 
 object RegionProperty {
   case object Default extends RegionProperty
+  case object LowFidelity extends RegionProperty
+  case object Shared extends RegionProperty
 }

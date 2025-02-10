@@ -166,6 +166,8 @@ object TypeReduction2 {
   // MATT docs
   private def getEff(action: RegionAction, prop: RegionProperty, reg: Type, loc: SourceLocation): Type = (action, prop) match {
     case (a, RegionProperty.Default) => Type.mkRegionToEff(Some(a), reg, loc)
+    case (_, RegionProperty.LowFidelity) => Type.mkRegionToEff(None, reg, loc)
+    case (a, RegionProperty.Shared) => Type.mkUnion(Type.mkRegionToEff(Some(a), reg, loc), Type.Cst(TypeConstructor.Effect(Symbol.NonDet), loc), loc)
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
