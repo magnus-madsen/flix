@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RegionProperty, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RegionAction, RegionProperty, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, Unification}
@@ -924,9 +924,9 @@ object Monomorpher {
     case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteSet.mkSet(EffectOrRegion.Effect(sym))
-    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff, _), Type.Cst(TypeConstructor.Region(sym), _), _) =>
+    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.Region(sym), _), _) => // MATT handle action
       CofiniteSet.mkSet(EffectOrRegion.Region(sym.prop))
-    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff, _), Type.Cst(TypeConstructor.GenericRegion(prop), _), _) =>
+    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.GenericRegion(prop), _), _) => // MATT handle action
       CofiniteSet.mkSet(EffectOrRegion.Region(prop))
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteSet.complement(eval(y))
@@ -950,7 +950,8 @@ object Monomorpher {
   // MATT docs
   private def effectOrRegionToType(effOrReg: EffectOrRegion, loc: SourceLocation): Type = effOrReg match {
     case EffectOrRegion.Effect(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
-    case EffectOrRegion.Region(prop) => Type.Apply(Type.Cst(TypeConstructor.RegionToEff, loc), Type.Cst(TypeConstructor.GenericRegion(prop), loc), loc)
+    // MATT defaulting action to Heap but should take from prop or something
+    case EffectOrRegion.Region(prop) => Type.Apply(Type.Cst(TypeConstructor.RegionToEff(None), loc), Type.Cst(TypeConstructor.GenericRegion(prop), loc), loc)
   }
 
   /** Returns the normalized default type for the kind of `tpe0`. */

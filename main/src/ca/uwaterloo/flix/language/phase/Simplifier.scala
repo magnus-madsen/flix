@@ -341,7 +341,7 @@ object Simplifier {
             // Remove the type argument.
             MonoType.Region
 
-          case TypeConstructor.RegionToEff =>
+          case TypeConstructor.RegionToEff(_) =>
             MonoType.Unit
 
           case TypeConstructor.Tuple(_) =>
@@ -512,7 +512,7 @@ object Simplifier {
             // Remove the type argument.
             Type.Cst(TypeConstructor.RegionWithoutRegion, loc)
 
-          case TypeConstructor.RegionToEff =>
+          case TypeConstructor.RegionToEff(_) =>
             Type.mkUnit(loc)
 
           case TypeConstructor.Tuple(_) =>

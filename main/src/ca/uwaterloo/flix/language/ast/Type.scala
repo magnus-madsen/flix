@@ -1217,8 +1217,8 @@ object Type {
   /**
     * Returns a Region effect for the given region argument `r` with the given source location `loc`.
     */
-  def mkRegionToEff(r: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Cst(TypeConstructor.RegionToEff, loc), r, loc)
+  def mkRegionToEff(action: Option[RegionAction], r: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), loc), r, loc)
 
   /**
     * Returns a region type with the given symbol.
@@ -1406,7 +1406,7 @@ object Type {
     * Replaces the given region in the type with the Pure effect.
     */
   def purifyRegion(tpe0: Type, sym: Symbol.RegionSym): Type = tpe0 match {
-    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff, _), Cst(TypeConstructor.Region(sym1), _), _) if sym == sym1 =>
+    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Cst(TypeConstructor.Region(sym1), _), _) if sym == sym1 =>
       Type.Pure
     case t: Cst => t
     case t: Var => t

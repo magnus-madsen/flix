@@ -477,7 +477,7 @@ object TypeConstructor {
   /**
     * A type constructor that converts a region to an Eff type.
     */
-  case object RegionToEff extends TypeConstructor {
+  case class RegionToEff(action: Option[RegionAction]) extends TypeConstructor {
     /**
       * The shape of an effect-kind region is Heap[l].
       */
