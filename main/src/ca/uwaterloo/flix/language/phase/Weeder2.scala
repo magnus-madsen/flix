@@ -683,10 +683,10 @@ object Weeder2 {
 
     // MATT docs
     private def tokenToRegionTag(tree: Tree)(implicit sctx: SharedContext): Option[RegionProperty] = {
-      tree.children.headOption.collect {
+      tree.children.headOption.flatMap {
         case token: Token =>
           token.text match {
-            case "%default" => RegionProperty.Default
+            case "%default" => Some(RegionProperty.Default)
             case _ => None // MATT add error
           }
         case _ => None
