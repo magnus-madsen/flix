@@ -150,8 +150,8 @@ object Symbol {
   /**
     * Returns a fresh region sym with the given text.
     */
-  def freshRegionSym(ident: Ident)(implicit flix: Flix): RegionSym = {
-    new RegionSym(flix.genSym.freshId(), ident.name, RegionProperty.Default, ident.loc) // MATT take prop as param
+  def freshRegionSym(ident: Ident, prop: RegionProperty)(implicit flix: Flix): RegionSym = {
+    new RegionSym(flix.genSym.freshId(), ident.name, prop, ident.loc)
   }
 
   /**
