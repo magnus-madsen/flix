@@ -280,7 +280,7 @@ object Visitor {
   private def visitExpr(expr: Expr)(implicit a: Acceptor, c: Consumer): Unit = {
     if (!a.accept(expr.loc)) { return }
 
-    c.consumeExpr(expr)
+    if (!expr.loc.isSynthetic) c.consumeExpr(expr)
 
     expr match {
       case Expr.Cst(_, _, _) => ()
