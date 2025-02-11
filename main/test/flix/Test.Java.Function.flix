@@ -23,7 +23,7 @@ mod Test.Java.Function {
     import java.util.stream.Stream
 
     @Test
-    def testFunction(): Bool \ IO = {
+    def testFunction(): Bool \ {NonDet, IO} = {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
@@ -32,7 +32,7 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testConsumer(): Bool \ IO = {
+    def testConsumer(): Bool \ {NonDet, IO} = {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
@@ -85,7 +85,7 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testLongFunction(): Bool \ IO = {
+    def testLongFunction(): Bool \ {NonDet, IO} = {
         let stream0 = LongStream.of(42i64);
         let f = (i: Int64) -> new Object {
             def toString(_this: Object): String = "${i}"

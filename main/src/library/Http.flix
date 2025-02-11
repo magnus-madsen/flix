@@ -108,9 +108,9 @@ mod Http {
     ///
     /// Handles the `Http` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Http` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `Http` effect using the `Net`, `NonDet`, and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, NonDet, IO} = x ->
         run {
             Ok(f(x))
         } with handler Http {
@@ -152,8 +152,8 @@ mod Http {
     ///
     /// Runs the `Http` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Http` effect using the `IO` effect.
+    /// In other words, re-interprets the `Http` effect using the `Net`, `NonDet`, and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Http) + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Http) + {Net, NonDet, IO} = handle(f)()
 
 }

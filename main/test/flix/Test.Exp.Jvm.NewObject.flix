@@ -42,7 +42,7 @@ mod Test.Exp.Jvm.NewObject {
         new Serializable { }
 
     @test
-    def testImplementInterface01(): Bool \ IO =
+    def testImplementInterface01(): Bool \ {NonDet, IO} =
         implementSerializable().toString().startsWith("Anon")
 
     @test
@@ -291,7 +291,7 @@ mod Test.Exp.Jvm.NewObject {
             anon.concreteMethod("bar") == "flix: bar"
 
     @test
-    def testMethodClosure01(): Bool \ IO =
+    def testMethodClosure01(): Bool \ {NonDet, IO} =
         let x = Array#{1, 2, 3} @ Static;
         let y = Array#{4, 5, 6} @ Static;
         let anon = new Object {
