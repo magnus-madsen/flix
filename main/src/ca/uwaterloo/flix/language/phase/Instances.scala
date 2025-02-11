@@ -41,18 +41,13 @@ object Instances {
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[InstanceError]) = {
     implicit val sctx: SharedContext = SharedContext.mk()
     flix.phaseNew("Instances") {
-      visitInstances(root, oldRoot, changeSet)
-      visitTraits(root)
-      (root, sctx.errors.asScala.toList)
+      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList2(_)(checkInstancesOfTrait(_, root)))
+      val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+      (root.copy(instances = instances, traits = traits), sctx.errors.asScala.toList)
     }
   }
 
 
-  /**
-    * Validates all instances in the given AST root.
-    */
-  private def visitTraits(root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): Unit =
-    ParOps.parMap(root.traits.values)(visitTrait)
 
   /**
     * Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`.
@@ -74,16 +69,9 @@ object Instances {
   /**
     * Performs validations on a single trait.
     */
-  private def visitTrait(trait0: TypedAst.Trait)(implicit sctx: SharedContext): Unit = {
+  private def visitTrait(trait0: TypedAst.Trait)(implicit sctx: SharedContext): TypedAst.Trait = {
     checkLawApplication(trait0)
-  }
-
-  /**
-    * Validates all instances in the given AST root.
-    */
-  private def visitInstances(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    // Check the instances of each trait in parallel.
-    ParOps.parMap(root.instances.valueLists)(checkInstancesOfTrait(_, root, changeSet))
+    trait0
   }
 
   /**
@@ -268,7 +256,7 @@ object Instances {
   /**
     * Reassembles an instance
     */
-  private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Unit = {
+  private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): Unit = {
     checkSigMatch(inst, root)
     checkOrphan(inst)
     checkSuperInstances(inst, root)
@@ -277,7 +265,7 @@ object Instances {
   /**
     * Reassembles a set of instances of the same trait.
     */
-  private def checkInstancesOfTrait(insts0: List[TypedAst.Instance], root: TypedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Unit = {
+  private def checkInstancesOfTrait(insts0: List[TypedAst.Instance], root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[TypedAst.Instance] = {
 
     // Instances can be uniquely identified by their heads,
     // due to the non-complexity rule and non-overlap rule.
@@ -289,10 +277,12 @@ object Instances {
       case inst =>
         if (checkSimple(inst)) {
           checkOverlap(inst, heads)
-          checkInstance(inst, root, changeSet)
+          checkInstance(inst, root)
           heads += (unsafeGetHead(inst) -> inst)
         }
     }
+
+    insts0
   }
 
   /**
