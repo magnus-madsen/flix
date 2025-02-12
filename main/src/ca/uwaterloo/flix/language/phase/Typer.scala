@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolverInterface, InfResult, TypeContext}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolverInterface, InfResult, SubstitutionTree, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -198,7 +198,7 @@ object Typer {
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
-    TypeReconstruction2.visitDef(defn, subst)
+    TypeReconstruction.visitDef(defn, subst)
   }
 
   /**
@@ -235,7 +235,7 @@ object Typer {
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
     sig.exp match {
-      case None => TypeReconstruction.visitSig(sig, Substitution.empty)
+      case None => TypeReconstruction.visitSig(sig, SubstitutionTree.empty)
       case Some(exp) =>
         val (tpe, eff0) = ConstraintGen.visitExp(exp)
         val renv = context.getRigidityEnv
@@ -249,7 +249,7 @@ object Typer {
         val infResult = InfResult(constrs, tpe, eff, renv)
         val (subst, constraintErrors) = ConstraintSolverInterface.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         constraintErrors.foreach(sctx.errors.add)
-        TypeReconstruction2.visitSig(sig, subst)
+        TypeReconstruction.visitSig(sig, subst)
     }
   }
 
