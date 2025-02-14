@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Case, Expr, ParYieldFragment, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
@@ -174,7 +174,7 @@ object PatMatch {
 
       case Expr.Match(exp, rules, _, _, _) =>
         visitExp(exp)
-        rules.foreach{r =>
+        rules.foreach { r =>
           visitExp(r.exp)
           r.guard.foreach(visitExp)
         }
@@ -296,7 +296,7 @@ object PatMatch {
         visitExp(exp2)
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
-        rules.foreach{r =>
+        rules.foreach { r =>
           visitExp(r.exp)
           visitExp(r.chan)
         }
@@ -364,7 +364,7 @@ object PatMatch {
     */
   private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // Call findNonMatchingPat for each pattern individually
-    frags.foreach(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
+    frags.foreach(f => findNonMatchingPat(List(List(f.pat)), 1, f.exp.tpe, root) match {
       case Exhaustive => ()
       case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc))
     })
@@ -382,7 +382,7 @@ object PatMatch {
     // Filter down to the unguarded rules.
     // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
     val unguardedRules = rules.filter(r => r.guard.isEmpty)
-    findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, root) match {
+    findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, exp.tpe, root) match {
       case Exhaustive => ()
       case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
@@ -397,7 +397,7 @@ object PatMatch {
     * @param root  The AST root of the expression
     * @return If no such pattern exists, returns Exhaustive, else returns NonExhaustive(a matching pattern)
     */
-  private def findNonMatchingPat(rules: List[List[Pattern]], n: Int, root: TypedAst.Root)(implicit sctx: SharedContext): Exhaustiveness = {
+  private def findNonMatchingPat(rules: List[List[Pattern]], n: Int, tpe: Type, root: TypedAst.Root)(implicit sctx: SharedContext): Exhaustiveness = {
     if (n == 0) {
       if (rules.isEmpty) {
         return NonExhaustive(List.empty[TyCon])
@@ -406,7 +406,7 @@ object PatMatch {
     }
 
     val sigma = rootCtors(rules)
-    val missing = missingFromSig(sigma, root)
+    val missing = missingFromSig(sigma, tpe, root)
     if (missing.isEmpty && sigma.nonEmpty) {
       /* If the constructors are complete, then we check that the arguments to the constructors and the remaining
        * patterns are complete
@@ -426,7 +426,7 @@ object PatMatch {
        * exhaustive. So we create a "Specialized" matrix for "Some" with {True, False} as rows and check that.
        */
       val checkAll: List[Exhaustiveness] = sigma.map(c => {
-        val res: Exhaustiveness = findNonMatchingPat(specialize(c, rules, root), countCtorArgs(c) + n - 1, root)
+        val res: Exhaustiveness = findNonMatchingPat(specialize(c, rules, root), countCtorArgs(c) + n - 1, ??? /* MATT what type here? */ , root)
         res match {
           case Exhaustive => Exhaustive
           case NonExhaustive(ctors) => NonExhaustive(rebuildPattern(c, ctors))
@@ -438,7 +438,7 @@ object PatMatch {
       /* If the constructors are not complete, then we will fall to the wild/default case. In that case, we need to
        * check for non matching patterns in the wild/default matrix.
        */
-      findNonMatchingPat(defaultMatrix(rules), n - 1, root) match {
+      findNonMatchingPat(defaultMatrix(rules), n - 1, ??? /* MATT what type here? */ , root) match {
         case Exhaustive => Exhaustive
         case NonExhaustive(ctors) => sigma match {
           // If sigma is not empty, pick one of the missing constructors and return it
@@ -609,13 +609,16 @@ object PatMatch {
     * Wildcards are exhaustive, but we need to do some additional checking in that case (@see defaultMatrix)
     *
     * @param ctors The ctors that we match with
+    * @param tpe   MATT todo
     * @param root  Root of the expression tree
     * @return
     */
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
     // Enumerate all the constructors that we need to cover
     def getAllCtors(x: TyCon): List[TyCon] = x match {
-      // Structural types have just one constructor
+      // For built-in constructors, we can add all the options since we know them a priori
+      case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
+      case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
       case a: TyCon.Tuple => List(a)
       case a: TyCon.Record => List(a)
 
@@ -626,10 +629,6 @@ object PatMatch {
           case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
         }
       }.toList
-
-      // For Unit and Bool constants are enumerable
-      case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
-      case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
@@ -646,6 +645,82 @@ object PatMatch {
      */
     expCtors.filterNot {
       ctor => ctors.exists(y => sameCtor(ctor, y))
+    }
+  }
+
+  private def enumerateConstructors(tpe: Type, root: Root): Constructors = {
+    tpe.typeConstructor match {
+      case None => Constructors.Infinite
+      case Some(cst) => cst match {
+
+        case TypeConstructor.Void => Constructors.Finite(Nil)
+        case TypeConstructor.Unit => Constructors.Finite(List(TyCon.Cst(Constant.Unit)))
+        case TypeConstructor.Null => Constructors.Finite(List(TyCon.Cst(Constant.Null)))
+        case TypeConstructor.Bool => Constructors.Finite(List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false))))
+        case TypeConstructor.Char => Constructors.Infinite
+        case TypeConstructor.Float32 => Constructors.Infinite
+        case TypeConstructor.Float64 => Constructors.Infinite
+        case TypeConstructor.BigDecimal => Constructors.Infinite
+        case TypeConstructor.Int8 => Constructors.Infinite
+        case TypeConstructor.Int16 => Constructors.Infinite
+        case TypeConstructor.Int32 => Constructors.Infinite
+        case TypeConstructor.Int64 => Constructors.Infinite
+        case TypeConstructor.BigInt => Constructors.Infinite
+        case TypeConstructor.Str => Constructors.Infinite
+        case TypeConstructor.Regex => Constructors.Infinite
+        case TypeConstructor.Arrow(arity) => Constructors.Infinite
+        case TypeConstructor.Record => Constructors.Infinite
+        case TypeConstructor.Schema => Constructors.Infinite
+        case TypeConstructor.Sender => Constructors.Infinite
+        case TypeConstructor.Receiver => Constructors.Infinite
+        case TypeConstructor.Lazy => Constructors.Infinite
+        case TypeConstructor.Enum(sym, kind) =>
+          val tycons = root.enums(sym).cases.map {
+            case (caseSym, Case(_, tpes, _, _)) => TyCon.Enum(caseSym, tpes.map(_ => TyCon.Wild))
+          }
+          Constructors.Finite(tycons.toList)
+        case TypeConstructor.Struct(sym, kind) => Constructors.Infinite
+        case TypeConstructor.RestrictableEnum(sym, kind) => Constructors.Infinite
+        case TypeConstructor.Native(clazz) => Constructors.Infinite
+        case TypeConstructor.Array => Constructors.Infinite
+        case TypeConstructor.Vector => Constructors.Infinite
+        case TypeConstructor.Tuple(l) => Constructors.Finite(List(TyCon.Tuple(List.fill(l)(TyCon.Wild))))
+        case TypeConstructor.RegionToStar => Constructors.Infinite
+        case TypeConstructor.Error(id, kind) => Constructors.Infinite
+
+        // MATT throw ICE
+        case TypeConstructor.AnyType => ???
+        case TypeConstructor.ArrowWithoutEffect(arity) => ???
+        case TypeConstructor.RecordRowEmpty => ???
+        case TypeConstructor.RecordRowExtend(label) => ???
+        case TypeConstructor.SchemaRowEmpty => ???
+        case TypeConstructor.SchemaRowExtend(pred) => ???
+        case TypeConstructor.JvmConstructor(constructor) => ???
+        case TypeConstructor.JvmMethod(method) => ???
+        case TypeConstructor.JvmField(field) => ???
+        case TypeConstructor.ArrayWithoutRegion => ???
+        case TypeConstructor.Relation => ???
+        case TypeConstructor.Lattice => ???
+        case TypeConstructor.True => ???
+        case TypeConstructor.False => ???
+        case TypeConstructor.Not => ???
+        case TypeConstructor.And => ???
+        case TypeConstructor.Or => ???
+        case TypeConstructor.Pure => ???
+        case TypeConstructor.Univ => ???
+        case TypeConstructor.Complement => ???
+        case TypeConstructor.Union => ???
+        case TypeConstructor.Intersection => ???
+        case TypeConstructor.Difference => ???
+        case TypeConstructor.SymmetricDiff => ???
+        case TypeConstructor.Effect(sym) => ???
+        case TypeConstructor.CaseComplement(sym) => ???
+        case TypeConstructor.CaseUnion(sym) => ???
+        case TypeConstructor.CaseIntersection(sym) => ???
+        case TypeConstructor.CaseSet(syms, enumSym) => ???
+        case TypeConstructor.RegionWithoutRegion => ???
+      }
+
     }
   }
 
@@ -778,21 +853,29 @@ object PatMatch {
     l.foldRight(Exhaustive: Exhaustiveness)(mergeExhaustive)
   }
 
+
+  sealed trait Constructors
+
+  object Constructors {
+    case class Finite(tycons: List[TyCon]) extends Constructors
+    case object Infinite extends Constructors
+  }
+
   /**
-   * Companion object for [[SharedContext]]
-   */
+    * Companion object for [[SharedContext]]
+    */
   private object SharedContext {
 
     /**
-     * Returns a fresh shared context.
-     */
+      * Returns a fresh shared context.
+      */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 
   /**
-   * A global shared context. Must be thread-safe.
-   *
-   * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
-   */
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
+    */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NonExhaustiveMatchError])
 }
