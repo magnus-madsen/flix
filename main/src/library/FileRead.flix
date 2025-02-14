@@ -48,6 +48,11 @@ pub eff FileRead {
     def isSymbolicLink(f: String): Bool
 
     ///
+    /// Returns `true` if the given path `p` is a valid path on the current platform.
+    ///
+    def isValidPath(p: String): Bool
+
+    ///
     /// Returns `true` if the given file `f` is writable.
     ///
     def isWritable(f: String): Bool
@@ -163,6 +168,15 @@ mod FileRead {
                     k(Files.isSymbolicLink(Paths.get(f)))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                }
+            }
+
+            def isValidPath(p, k) = {
+                try {
+                    Paths.get(p);
+                    k(true)
+                } catch {
+                    case _: InvalidPathException => k(false)
                 }
             }
 

@@ -45,6 +45,11 @@ pub eff FileReadWithResult {
     def isSymbolicLink(f: String): Result[IoError, Bool]
 
     ///
+    /// Returns `true` if the given path `p` is a valid path on the current platform.
+    ///
+    def isValidPath(p: String): Bool
+
+    ///
     /// Returns `true` if the given file `f` is writable.
     ///
     def isWritable(f: String): Result[IoError, Bool]
@@ -166,6 +171,15 @@ mod FileReadWithResult {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 };
                 k(res)
+            }
+
+            def isValidPath(p, k) = {
+                try {
+                    Paths.get(p);
+                    k(true)
+                } catch {
+                    case _: InvalidPathException => k(false)
+                }
             }
 
             def isWritable(f, k) = {
