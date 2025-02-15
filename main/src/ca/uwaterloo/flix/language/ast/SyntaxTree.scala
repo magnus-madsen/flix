@@ -111,6 +111,8 @@ object SyntaxTree {
 
     case object QName extends TreeKind
 
+    case object RegionTag extends TreeKind
+
     case object Root extends TreeKind
 
     case object StructField extends TreeKind

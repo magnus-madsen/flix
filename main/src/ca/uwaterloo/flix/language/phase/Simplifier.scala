@@ -341,6 +341,9 @@ object Simplifier {
             // Remove the type argument.
             MonoType.Region
 
+          case TypeConstructor.RegionToEff(_) =>
+            MonoType.Unit
+
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
             MonoType.Tuple(targs.map(visitType))
@@ -416,6 +419,9 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.RegionWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.GenericRegion(prop) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
@@ -506,6 +512,9 @@ object Simplifier {
             // Remove the type argument.
             Type.Cst(TypeConstructor.RegionWithoutRegion, loc)
 
+          case TypeConstructor.RegionToEff(_) =>
+            Type.mkUnit(loc)
+
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
             Type.mkTuple(targs.map(visitPolyType), loc)
@@ -580,6 +589,9 @@ object Simplifier {
 
           case TypeConstructor.RegionWithoutRegion =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.GenericRegion(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
 
       case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
@@ -587,6 +599,7 @@ object Simplifier {
       case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.GetEff(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
     }
   }
 

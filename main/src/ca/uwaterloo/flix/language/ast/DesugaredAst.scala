@@ -113,7 +113,7 @@ object DesugaredAst {
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
-    case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
+    case class Scope(prop: RegionProperty, ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 

@@ -94,6 +94,10 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
         case Type.UnresolvedJvmType(member0, loc) =>
           val member = member0.map(visit)
           Type.UnresolvedJvmType(member, loc)
+
+        case Type.GetEff(action, tpe0, loc) =>
+          val tpe = visit(tpe0)
+          Type.GetEff(action, tpe, loc)
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.

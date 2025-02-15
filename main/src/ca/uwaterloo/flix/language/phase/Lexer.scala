@@ -342,6 +342,7 @@ object Lexer {
       case '/' => TokenKind.Slash
       case '@' if peek().isLetter => acceptAnnotation()
       case '@' => TokenKind.At
+      case '%' => acceptRegionTag()
       case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isOperator(":::") => TokenKind.TripleColon
@@ -1009,6 +1010,20 @@ object Lexer {
       }
     }
     TokenKind.Annotation
+  }
+
+  /**
+    * Moves current position past a region. E.g., "%lofi".
+    */
+  private def acceptRegionTag()(implicit s: State): TokenKind = {
+    while (!eof()) {
+      if (!peek().isLetter) {
+        return TokenKind.RegionTag
+      } else {
+        advance()
+      }
+    }
+    TokenKind.RegionTag
   }
 
   /**

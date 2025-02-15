@@ -82,6 +82,7 @@ object TypePrinter {
       case (Type.JvmToType(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToType"), List(print(tpe))), args.map(print))
       case (Type.JvmToEff(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(tpe))), args.map(print))
       case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))
+      case (Type.GetEff(action, tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("Get" + action.toString), List(print(tpe))), args.map(print))
       case (Type.Apply(_, _, _), _) =>
         // `collectApp` does not return Apply as base.
         DocAst.Type.Meta("bug in TypePrinter")

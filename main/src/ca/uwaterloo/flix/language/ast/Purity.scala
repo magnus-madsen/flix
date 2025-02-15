@@ -188,6 +188,8 @@ object Purity {
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.UnresolvedJvmType(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.GetEff(_, _, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
   }
 
 }

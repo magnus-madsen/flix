@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RegionAction, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.util.collection.SortedBimap
@@ -157,6 +157,16 @@ object EffUnification3 {
       case Some(x) => SetFormula.Cst(x)
     }
 
+    case tpe@Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), _, _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound region: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.Cst(x)
+    }
+
+    case tpe@Type.GetEff(_, _, _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound region manipulation: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.Cst(x)
+    }
+
     case tpe@Type.Cst(TypeConstructor.Error(_, _), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound error type: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.Var(x)
@@ -274,6 +284,12 @@ object EffUnification3 {
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         val symCmp = sym1.compare(sym2)
         if (symCmp != 0) symCmp else arg1.compare(arg2)
+      case (Atom.RegionToEff(action1, arg1), Atom.RegionToEff(action2, arg2)) =>
+        val actionCmp = action1.compare(action2)
+        if (actionCmp != 0) actionCmp else arg1.compare(arg2)
+      case (Atom.GetEff(action1, arg1), Atom.GetEff(action2, arg2)) =>
+        val actionCmp = action1.compare(action2)
+        if (actionCmp != 0) actionCmp else arg1.compare(arg2)
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
@@ -282,7 +298,9 @@ object EffUnification3 {
           case Atom.Region(_) => 2
           case Atom.Eff(_) => 3
           case Atom.Assoc(_, _) => 4
-          case Atom.Error(_) => 5
+          case Atom.RegionToEff(_, _) => 5
+          case Atom.GetEff(_, _) => 6
+          case Atom.Error(_) => 7
         }
 
         ordinal(this) - ordinal(that)
@@ -305,17 +323,24 @@ object EffUnification3 {
     /** Represents a region.  */
     case class Region(sym: Symbol.RegionSym) extends Atom
 
+    /** Represents a region converted to an effect. */
+    case class RegionToEff(action: Option[RegionAction], arg: Atom) extends Atom
+
+    /** Represents an abstract action on a region. */
+    case class GetEff(action: RegionAction, arg: Atom) extends Atom
+
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
-    @tailrec
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
       case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromType(tpe2)) // MATT do we need to delegate like assocFromType?
+      case Type.GetEff(action, tpe, _) => Atom.GetEff(action, fromType(tpe))
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
       case _ => throw InvalidType
@@ -349,21 +374,30 @@ object EffUnification3 {
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
       case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
+      case regToEff@Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), _, _) => SortedSet.from(getNestedAtoms(regToEff))
+      case getEff@Type.GetEff(_, _, _) => SortedSet.from(getNestedAtoms(getEff))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
-      case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
+      case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getNestedAtoms(assoc))
       case _ => SortedSet.empty
     }
 
     /**
       * Returns the [[Atom]] of `t` if it is a valid associated [[Atom]] (according to
       * [[Atom.assocFromType]]). Invalid or unrelated types return [[None]].
+      *
+      * // MATT update this doc
       */
-    private def getAssocAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
+    private def getNestedAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.VarRigid(sym))
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
-        getAssocAtoms(arg).map(Atom.Assoc(sym, _))
-      case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
+        getNestedAtoms(arg).map(Atom.Assoc(sym, _))
+      case Type.Alias(_, _, tpe, _) => getNestedAtoms(tpe)
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), arg, _) =>
+        getNestedAtoms(arg).map(Atom.RegionToEff(action, _))
+      case Type.GetEff(action, tpe, _) =>
+        getNestedAtoms(tpe).map(Atom.GetEff(action, _))
+      case Type.Cst(TypeConstructor.Region(sym), _) => Some(Atom.Region(sym))
       case _ => None
     }
 
@@ -374,10 +408,14 @@ object EffUnification3 {
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
       case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
+      case Atom.RegionToEff(action, arg0) =>
+        Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), loc), toType(arg0, loc), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
         Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+      case Atom.GetEff(action, arg0) =>
+        Type.GetEff(action, toType(arg0, loc), loc)
       case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
     }
   }

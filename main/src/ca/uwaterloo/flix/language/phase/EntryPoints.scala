@@ -131,6 +131,7 @@ object EntryPoints {
     case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
     case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
     case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.GetEff(action, tpe, loc) => Result.Err(ErrorOrMalformed)
   }
 
   private object CheckEntryPoints {
@@ -406,6 +407,7 @@ object EntryPoints {
       case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
       case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
       case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
+      case Type.GetEff(_, tpe, _) => Result.Err(ErrorOrMalformed)
     }
 
     /** Returns an error if `defn` is in the root namespace. */
@@ -475,6 +477,7 @@ object EntryPoints {
         case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
         case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
         case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
+        case Type.GetEff(_, _, _) => Result.Err(ErrorOrMalformed)
       }
     }
 

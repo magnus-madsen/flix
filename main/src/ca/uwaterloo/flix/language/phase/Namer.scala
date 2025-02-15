@@ -634,9 +634,9 @@ object Namer {
     case DesugaredAst.Expr.Region(tpe, loc) =>
       NamedAst.Expr.Region(tpe, loc)
 
-    case DesugaredAst.Expr.Scope(ident, exp, loc) =>
+    case DesugaredAst.Expr.Scope(prop, ident, exp, loc) =>
       // Introduce a rigid region variable for the region.
-      val regSym = Symbol.freshRegionSym(ident)
+      val regSym = Symbol.freshRegionSym(ident, prop)
 
       // Create a new scope for the region.
       val newScope = scope.enter(regSym)
