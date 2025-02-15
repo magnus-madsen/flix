@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.58.0:
+- Added support for plain LSP (thanks Chenhao!)
+
 Version 0.57.1:
 - Compiler: Extend list of semantic tokens (thanks Chenhao!)
 
