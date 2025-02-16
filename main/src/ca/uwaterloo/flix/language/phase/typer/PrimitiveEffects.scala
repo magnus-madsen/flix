@@ -59,6 +59,14 @@ object PrimitiveEffects {
     */
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = loadMethodEffs()
 
+  def getAnnotatedMethods: Set[Method] = methodEffs.keys.toSet
+
+  def getAnnotatedConstructors: Set[Constructor[?]] = constructorEffs.keys.toSet
+
+  def getAnnotatedClasses: Set[Class[?]] = classEffs.keys.toSet
+
+  def getAnnotatedPackages: Set[Package] = packageEffs.keys.toSet
+
   /**
     * Returns the primitive effects of calling the given constructor `c`.
     */
@@ -247,10 +255,10 @@ object PrimitiveEffects {
   }
 
   /**
-   * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffectSym]].
-   *
-   * Returns the empty set if the string is empty.
-   */
+    * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffectSym]].
+    *
+    * Returns the empty set if the string is empty.
+    */
   private def parseEffSet(s: String): Set[Symbol.EffectSym] = {
     if (s.trim.isEmpty)
       Set.empty

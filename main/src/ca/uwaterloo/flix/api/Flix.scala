@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.api.effectlock.{Reachability, TrustValidation}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
@@ -25,9 +26,10 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
+import ca.uwaterloo.flix.tools.pkg.Dependency
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.nio.charset.Charset
@@ -869,4 +871,61 @@ class Flix {
     }
   }
 
+  /**
+    * Temporary function for testing
+    */
+  def effectLockReachable(): Option[TypedAst.Root] = {
+    val (optRoot, errors) = check()
+    if (errors.isEmpty) {
+      // Mark this object as implicit.
+      implicit val flix: Flix = this
+
+      // Initialize fork-join thread pool.
+      initForkJoinPool()
+
+      val (root, occurrenceInfo) = Reachability.run(optRoot.get)
+
+      shutdownForkJoinPool()
+
+      Some(root)
+
+    } else {
+      None
+    }
+  }
+
+  def reachableLibraryFunctions(root: TypedAst.Root): (Map[Path, List[TypedAst.Def]], ListMap[Symbol, SourceLocation]) = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
+    val (filteredRoot, uses) = Reachability.run(root)
+    shutdownForkJoinPool()
+
+    // Filter for public functions in libraries
+    val reachable = filteredRoot.defs.foldLeft(Map.empty[Path, List[TypedAst.Def]]) {
+      case (acc, (sym, defn)) if defn.spec.mod.isPublic => sym.loc.sp1.source.input match {
+        case Input.FileInPackage(path, _, _, _) =>
+          val defs = acc.getOrElse(path, List.empty)
+          acc + (path -> (defn :: defs))
+
+        case Input.Text(_, _, _) | Input.TxtFile(_, _) | Input.PkgFile(_, _) | Input.Unknown => acc
+      }
+      case (acc, _) => acc
+    }
+    (reachable, uses)
+  }
+
+  def validateTrust(root: TypedAst.Root, dependencies: Set[Dependency.FlixDependency]): List[BootstrapError.TrustError] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
+    val result = TrustValidation.run(root, dependencies)
+    shutdownForkJoinPool()
+
+    result
+  }
 }

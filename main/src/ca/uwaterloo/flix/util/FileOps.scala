@@ -65,6 +65,23 @@ object FileOps {
     }
   }
 
+  def readFile(p: Path): Result[String, String] = {
+    if (!Files.exists(p)) {
+      return Result.Err("File does not exist")
+    }
+
+    if (!Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS)) {
+      return Result.Err("File is not regular")
+    }
+
+    if (!Files.isReadable(p)) {
+      return Result.Err("File is not readable")
+    }
+
+    Result.Ok(Files.readString(p))
+
+  }
+
   /**
    * Writes the given json `j` to the given file path `p`.
    *

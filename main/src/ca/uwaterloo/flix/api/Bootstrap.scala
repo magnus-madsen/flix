@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Magnus Madsen, 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,26 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.api.Bootstrap.{convertPathToRelativeFileName, getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, SuspiciousExpr, TrustValidation}
+import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
+import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
+import ca.uwaterloo.flix.language.phase.typer.PrimitiveEffects
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, Permissions, ReleaseError}
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, InternalCompilerException, Result, Validation}
 
-import java.io.{PrintStream, PrintWriter}
+import java.io.PrintStream
+import java.lang.reflect.{Constructor, Method}
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
@@ -209,6 +216,11 @@ object Bootstrap {
     * Returns `true` if the given path `p` is a fpkg-file.
     */
   def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+
+  /**
+    * Returns the path to the effect lock file based on `p`, assuming that `p` is the project root.
+    */
+  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
 
   /**
     * Creates a new directory at the given path `p`.
@@ -481,13 +493,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Type checks the source files for the project.
     */
-  def check(flix: Flix): Validation[Unit, BootstrapError] = {
+  def check(flix: Flix): Validation[TypedAst.Root, BootstrapError] = {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    val (_, errors) = flix.check()
+    val (optRoot, errors) = flix.check()
     if (errors.isEmpty) {
-      Validation.Success(())
+      Validation.Success(optRoot.get)
     } else {
       Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
@@ -825,4 +837,109 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Success(true)
     }
   }
+
+  def effectLock(flix: Flix): Validation[Unit, BootstrapError] = {
+    Validation.mapN(check(flix)) {
+      case root =>
+        val path = getEffectLockFile(projectPath)
+        val (reachableDefs, _) = flix.reachableLibraryFunctions(root)
+        val resolvedDefs = reachableDefs.map {
+          case (path, defs) => resolveLibName(path) -> defs
+        }
+        val ser = Serialization.serialize(resolvedDefs)
+        FileOps.writeString(path, ser)
+    }
+  }
+
+  def effectUpgrade(root: TypedAst.Root, uses: ListMap[Symbol, SourceLocation]): Validation[Unit, BootstrapError] = {
+    val path = getEffectLockFile(projectPath)
+
+    FileOps.readFile(path) match {
+      case Ok(json) => Serialization.deserialize(json) match {
+        case Some(originalLibs) =>
+          validateLibs(originalLibs, root.defs.values.toList, uses)
+
+        case None =>
+          Validation.Failure(BootstrapError.FileError("invalid effect lock file"))
+
+      }
+
+      case Err(e) =>
+        Validation.Failure(BootstrapError.FileError(e))
+    }
+  }
+
+  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def], uses: ListMap[Symbol, SourceLocation]): Validation[Unit, BootstrapError] = {
+    val errors = mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
+    for (
+      defn <- upgradedProgram;
+      libName <- extractLibName(defn);
+      originalSignatures <- originalLibs.get(libName);
+      defnUses = uses.get(defn.sym);
+      err <- validateDefn(originalSignatures, defn, defnUses)
+    ) {
+      errors.addOne(err)
+    }
+
+    if (errors.isEmpty) {
+      Validation.Success(())
+    } else {
+      Validation.Failure(Chain.from(errors))
+    }
+  }
+
+  private def extractLibName(defn: TypedAst.Def): Option[String] = defn.sym.loc.sp1.source.input match {
+    case Input.FileInPackage(packagePath, _, _, _) =>
+      Some(resolveLibName(packagePath))
+
+    case Input.Unknown |
+         Input.PkgFile(_, _) |
+         Input.Text(_, _, _) |
+         Input.TxtFile(_, _) => None
+  }
+
+  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def, uses: List[SourceLocation]): Option[BootstrapError.EffectUpgradeError] = {
+    originalSignatures.find {
+      case (sym, _) => defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
+    }.flatMap {
+      case (_, originalScheme) =>
+        val newScheme = defn.spec.declaredScheme
+        val isSafe = EffectLock.isSafe(newScheme, originalScheme)
+        if (isSafe) {
+          None
+        } else {
+          Some(BootstrapError.EffectUpgradeError(defn.sym, uses, originalScheme, newScheme))
+        }
+    }
+  }
+
+  private def resolveLibName(path: Path): String = {
+    path.getParent.getParent.getFileName.toString
+  }
+
+  // TODO: Maybe consider just moving this into checkTrust and return failure if this is not the case
+  def isProjectMode: Boolean = this.optManifest.isDefined
+
+  def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError] = {
+    out.println("Validating library permissions...")
+    val errors = flix.validateTrust(root, getLibs)
+
+    // TODO: 6. Update error message formatting
+    if (errors.isEmpty) {
+      Validation.Success(())
+    } else {
+      Validation.Failure(Chain.from(errors))
+    }
+  }
+
+  /**
+    * Assumes that the AST can only contain library functions if the library is defined in the manifest file.
+    */
+  private def getLibs: Set[Dependency.FlixDependency] = {
+    val manifest = optManifest.getOrElse(throw InternalCompilerException("expected manifest file", SourceLocation.Unknown))
+    manifest.dependencies.collect {
+      case dep: Dependency.FlixDependency => dep
+    }.toSet
+  }
+
 }

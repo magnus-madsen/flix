@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package ca.uwaterloo.flix.api.effectlock.serialization
 
-import java.net.URL
+sealed trait SVT
 
-sealed trait Dependency
+object SVT {
 
-object Dependency {
+  case object Absent extends SVT
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, permissions: Permissions) extends Dependency
-
-  case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency
-
-  case class JarDependency(url: URL, fileName: String) extends Dependency
+  case class SourceText(s: String) extends SVT
 
 }

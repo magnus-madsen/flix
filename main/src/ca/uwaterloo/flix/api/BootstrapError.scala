@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol}
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
@@ -55,5 +57,40 @@ object BootstrapError {
     override def message(f: Formatter): String = e.reduce[String] {
       case (acc, s) => acc + System.lineSeparator() + s
     }
+  }
+
+  case class EffectUpgradeError(sym: Symbol.DefnSym, uses: List[SourceLocation], originalScheme: Scheme, newScheme: Scheme) extends BootstrapError {
+    override def message(f: Formatter): String = {
+
+      s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
+         |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |            ~~ Effect signatures have changed! ~~
+         |
+         |The following potentially harmful changes were detected:
+         |$effectSets
+         |
+         |$useSites
+         |""".stripMargin
+    }
+
+    private def effectSets: String = {
+      val newEffectSet = newScheme.base.effects.mkString("*{", ", ", "}*")
+      val effectSetDiff = newScheme.base.effects.diff(originalScheme.base.effects).mkString("*{", ", ", "}*")
+      val congruentSentence = if (newScheme.base.effects.size == 1) "The new effect is" else "The new effects are"
+      val newChanges = s"$congruentSentence: $effectSetDiff"
+      s"+ `$sym` now uses $newEffectSet!"
+    }
+
+    private def useSites: String = {
+      val congruentSentence = if (uses.length == 1) "The function is used in this place" else "The function is used in these places"
+      s"""  $congruentSentence:
+         |${uses.mkString("  - ", s"${System.lineSeparator()}  - ", "")}
+         |""".stripMargin
+    }
+  }
+
+  case class TrustError(loc: SourceLocation) extends BootstrapError {
+    override def message(f: Formatter): String = s"TrustError at $loc"
   }
 }

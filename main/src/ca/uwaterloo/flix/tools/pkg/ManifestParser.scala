@@ -360,7 +360,7 @@ object ManifestParser {
         // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).map {
-            Dependency.FlixDependency(repo, username, projectName, _, Nil)
+            Dependency.FlixDependency(repo, username, projectName, _, Permissions.FlixOnly)
           }
 
 
@@ -398,25 +398,23 @@ object ManifestParser {
   }
 
   /**
-    * Retrieve a list of permissions from a [[TomlTable]] `depTbl` at `key`.
+    * Retrieve a permissions from a [[TomlTable]] `depTbl` at `key`.
     */
-  private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[List[Permission], ManifestError] = {
-    // Ensure the permissions are an Array.
-    if (!depTbl.isArray(key)) {
+  private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[Permissions, ManifestError] = {
+    // Ensure the permissions is a string.
+    if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, perms))
+      if (perms == null) {
+        Ok(Permissions.FlixOnly)
+      } else {
+        Err(ManifestError.FlixDependencyPermissionTypeError(Some(p), key, perms))
+      }
     } else {
-      val permArray = depTbl.getArray(key)
-      val permissions = permArray.toList.asScala.toList.map({
-        // Ensure the contents of the array are strings.
-        case s: String => Permission.mkPermission(s) match {
-          case Some(p) => p
-          case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
-        }
-        // If an entry is not a string, return an error.
-        case _ => return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, permArray))
-      })
-      Ok(permissions)
+      val permRaw = depTbl.getString(key)
+      Permissions.fromString(permRaw) match {
+        case Some(p) => Ok(p)
+        case None => Err(ManifestError.FlixUnknownPermissionError(p, key, permRaw))
+      }
     }
   }
 

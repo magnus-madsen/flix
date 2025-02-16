@@ -17,9 +17,6 @@
 
 package ca.uwaterloo.flix.util.collection
 
-import java.util.Locale.FilteringMode
-import scala.collection.MapOps
-
 /**
   * Companion object for the [[ListMap]] class.
   */
