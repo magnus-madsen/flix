@@ -89,7 +89,6 @@ object ZheglakinPerf {
         |df = pd.read_csv('data.txt')
         |
         |seaborn.stripplot(data=df, x="Constraints", size=4.0, jitter=0.5, alpha=0.4)
-        |plt.title("Constraints per Equation System")
         |plt.xlabel("Constraints")
         |plt.xlim(1, None)
         |plt.grid(True)
@@ -101,8 +100,7 @@ object ZheglakinPerf {
         |
         |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", alpha=0.2)
         |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", alpha=0.2)
-        |seaborn.scatterplot(data=df, x="Constraints", y="Elms", alpha=0.2)
-        |plt.title("Flexible and Rigid Variables per Constraint System")
+        |seaborn.scatterplot(data=df, x="Constraints", y="Effects", alpha=0.2)
         |plt.ylabel("Constraints")
         |plt.ylabel("Quantity")
         |plt.xlim(1, 60)
@@ -115,8 +113,7 @@ object ZheglakinPerf {
         |
         |
         |
-        |seaborn.histplot(data=df[['Elms', 'RigidVars']], multiple='dodge', discrete=True, alpha=0.8, palette=seaborn.color_palette()[1:])
-        |plt.title("Constants and Elements")
+        |seaborn.histplot(data=df[['RigidVars', 'Effects']], multiple='dodge', discrete=True, alpha=0.8, palette=seaborn.color_palette()[1:])
         |plt.ylabel("Quantity")
         |plt.grid(True)
         |
@@ -148,7 +145,7 @@ object ZheglakinPerf {
         (numberOfConstraints, numberOfFlexVariables, numberOfRigidVariables, numberOfElements)
     }
 
-    val data = "Constraints,FlexVars,RigidVars,Elms" + "\n" + table.map(t => s"${t._1},${t._2},${t._3},${t._4}").mkString("\n")
+    val data = "Constraints,FlexVars,RigidVars,Effects" + "\n" + table.map(t => s"${t._1},${t._2},${t._3},${t._4}").mkString("\n")
     FileOps.writeString(Paths.get("./data.txt"), data)
     FileOps.writeString(Paths.get("./plots.py"), py1)
 
